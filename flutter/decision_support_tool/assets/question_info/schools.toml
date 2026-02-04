@@ -1,0 +1,26 @@
+
+questionText = 'How many schools (CCSD & private) are in the area and within a ½ mile radius?'
+useUrl = 'Use Clark County Education data'
+url = 'https://www.arcgis.com/apps/mapviewer/index.html?layers=ca9eba42cebc4b0c965ffe80a3923978'
+answers = [
+  { text = '0', points = 0.0 },
+  { text = '1', points = 1.0 },
+  { text = '>1', points = 2.0 },
+]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+instructionsMarkdown = '''
+* Click on the link for the Clark County Education Data tool, [available here](https://www.arcgis.com/apps/mapviewer/index.html?layers=ca9eba42cebc4b0c965ffe80a3923978).
+* Click on the magnifying glass icon located on the lower right of the map.
+* Enter the address of the project area into the search bar then either press enter or click on the magnifying glass icon on the right side of the search bar
+* Zoom out from the address area using the minus (-) button on the lower right of the map
+* Both CCSD and private schools will appear color-coded on the map as indicated in the legend that displays on the right side under “Symbology.” CCSD schools will feature additional labels, including flags and names.
+* Zoom in and out as needed to see schools within ½ mile radius
+* To measure distance, click the wrench icon (Map tools) on the right edge of the screen, then click “Measurement.”
+  * Click on a point in the project area that is closest to the school and then drag the measurement line to the nearest part of the school to reveal the distance
+  * Select “miles” on the drop-down menu for “unit”
+  * Continue this process until it is clear if there are 0, 1, or >1 schools within ½ mile
+  * Select the answer below that corresponds to the number of schools located within ½ mile of the project area'''
+videoId = '1zjzoedzwVEaE03DaWYAWmhLP1-1La9dZ'
+hint = '(Note: charter schools appear listed as private schools in the data source)'

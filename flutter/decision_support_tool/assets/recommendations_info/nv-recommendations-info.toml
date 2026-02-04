@@ -1,0 +1,162 @@
+
+[[s3_categories]]
+categoryTitle = 'Speed Limit'
+goodHealth = ['35 mph']
+betterHealth = ['30 mph']
+bestHealth = ['25 mph']
+
+[[s3_categories]]
+categoryTitle = 'Traffic Calming'
+goodHealth = [
+  'Reduce lane widths with centerlines, edge lines or other pavement markings.',
+]
+betterHealth = [
+  'Reduce lane widths with raised center medians to discourage passing in two-way turn lanes.',
+  'Install painted curb extensions at crosswalks.',
+  'Install painted chicanes with lane delineators.',
+]
+bestHealth = [
+  'Reduce lane widths and/or reduce number of lanes.',
+  'Install raised center medians.',
+  'Install raised curb extensions.',
+  'Install chicanes.',
+  'Install speed warning flashing beacons.',
+]
+
+[[s3_categories]]
+categoryTitle = 'Sidewalks'
+goodHealth = [
+  'Ensure minimum 4-ft clear width in sidewalk.',
+  'Repair trip hazards.',
+  'Ensure sidewalks and ramp transitions are PROWAG compliant.',
+]
+betterHealth = [
+  'Ensure minimum 5-ft clear width in sidewalk.',
+  'Repair trip hazards.',
+  'Ensure sidewalks and ramp transitions are PROWAG compliant.',
+  'Install detached sidewalks.',
+]
+bestHealth = [
+  'Install wide sidewalks, preferably 10-ft min.',
+  'Repair trip hazards.',
+  'Ensure sidewalks and ramp transitions are PROWAG compliant.',
+  'Install detached sidewalks with parklets.',
+]
+
+[[s3_categories]]
+categoryTitle = 'Crosswalks & Signalized Intersections'
+goodHealth = [
+  'Install crosswalk markings, warning signs and yield markings.',
+  'Install PROWAG- compliant sidewalk ramps and push buttons.',
+  'Install audible messages at signalized crosswalks.',
+  'Use ped crossing speed of 3.5 ft per second.',
+]
+betterHealth = [
+  'Install crosswalk markings, warning signs, and yield markings.',
+  'Install PROWAG-compliant directional sidewalk ramps and push buttons.',
+  'Install pedestrian activated flashing beacons.',
+  'Install median refuge.',
+  'Install painted curb extensions.',
+  'Improve lighting at sidewalk ramp and through crosswalks.',
+  'Install leading ped interval.',
+  'Install No Right on Red during ped peak hours.',
+]
+bestHealth = [
+  'Install pedestrian activated (sensors) flashers or signals.',
+  'Provide PROWAG compliant directional SW Ramps.',
+  'Install advanced warning flashers.',
+  'Shorten crossing distance by installing curb extensions.',
+  'Install median refuge with Danish offset at mid-block crosswalks.',
+  'Install pedestrian guide fencing to discourage jaywalking.',
+  'Install leading ped interval.',
+  'Reduce walking speed to 3 ft/sec at locations with high numbers of seniors or people with disabilities.',
+  'Install No Right on red.',
+  'Eliminate permissive left-turns during pedestrian peak hours.',
+  'Install signal timing to utilize exclusive pedestrian phase.',
+  'Install shade structures on corners.',
+]
+
+[[s3_categories]]
+categoryTitle = 'Bicycle Improvements'
+goodHealth = [
+  'Install exclusive bike lanes with applicable signs and markings.',
+  'Install bike racks near commercial businesses.',
+]
+betterHealth = [
+  'Install buffered bike lanes with applicable signs and markings.',
+  'Add green bike legend panels.',
+  'Install bike boxes at intersections using paint or other materials.',
+  'Install bike racks near commercial businesses.',
+  'Consider whether it is possible to extend bike improvements to connect to pre-existing bike infrastructure.',
+]
+bestHealth = [
+  'Install protected bike lanes with raised barrier and/or physical delineators/posts.',
+  'Install green bike lane markings through transitions or conflict locations.',
+  'Install bike signals and bike detectors at signalized intersections.',
+  'Install wayfinding signs.',
+  'Install bike lockers near transit stops or commercial hubs.',
+  'Consider whether it is possible to extend bike improvements to connect to pre-existing bike infrastructure',
+]
+
+[[s3_categories]]
+categoryTitle = 'Access Management'
+goodHealth = ['Reduce the number of driveways and increase driveway spacing.']
+betterHealth = [
+  'Install raised center medians to define vehicle ingress and egress locations and turning movements.',
+  'Upgrade ramps at driveways to PROWAG.',
+]
+bestHealth = [
+  'Reduce driveway radius to slow drivers and improve pedestrian visibility.',
+  'Upgrade ramps at driveways to PROWAG.',
+  'Require commercial businesses owners to acquire cross-access agreements and share driveways and parking.',
+]
+
+[[s3_categories]]
+categoryTitle = 'Visibility'
+goodHealth = [
+  'Remove all walls, shrubs, trees, and signs out of sight lines.',
+  'Install lighting to meet minimum intersection light levels, per Clark County Uniform Standard Drawing (AUSD) 300.S3.',
+]
+betterHealth = [
+  'Remove all walls, shrubs, trees, and signs out of sight lines.',
+  'Ensure that all utilities are out of sight lines.',
+  'Meet sidewalk illumination light levels of 0.2 FC minimum average along sidewalk.',
+  'Meet minimum pedestrian illuminance level of 2.0 FC minimum average on corners and through entire crosswalk.',
+]
+bestHealth = [
+  'Remove all walls, shrubs, trees, and signs out of sight lines.',
+  'Ensure that all utilities are out of sight lines.',
+  'Meet high sidewalk illumination light levels of 0.2 FC along sidewalk.',
+  'Meet highest pedestrian illuminance levels of 3.4 FC minimum average on corners and through entire crosswalk.',
+]
+
+[[s3_categories]]
+categoryTitle = 'Bicycle & Pedestrian Connectivity'
+goodHealth = [
+  'Evaluate project vicinity to nearby pedestrian attractors (parks, retail, schools, trails) and install interim asphalt concrete path(s) connections to corners or existing improvements.',
+]
+betterHealth = [
+  'Evaluate project vicinity to nearby pedestrian attractors and install crosswalks, warning signs, sidewalk ramps and AC paths for connectivity.',
+  'Install shaded bus shelters behind sidewalk.',
+  'Minimize or eliminate adjacent sawtooths beyond project boundary.',
+]
+bestHealth = [
+  'Evaluate projects vicinity to nearby pedestrian attractors, install interim crosswalks and AC paths accordingly, and install permanent improvements, curb, gutter, sidewalk, streetlights, and provide connections to existing bike and pedestrian infrastructure.',
+  'Install shaded bus shelters behind sidewalk.',
+  'Fill missing sidewalk gaps with permanent sidewalk.',
+  'Fill missing sidewalk gaps with lighting improvements.',
+  'Consider the possibility of installing permanent improvements beyond project boundary to eliminate sawtooths.',
+]
+
+[[s3_categories]]
+categoryTitle = 'Aesthetics'
+goodHealth = ['Install shade trees.']
+betterHealth = [
+  'Install shade trees.',
+  'Install active wayfinding signage/maps.',
+]
+bestHealth = [
+  'Install regularly spaced shade trees, and park benches.',
+  'Install active wayfinding signage/maps.',
+  'Install decorative crosswalks.',
+]

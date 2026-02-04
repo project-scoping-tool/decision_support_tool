@@ -1,0 +1,24 @@
+state = 'Nevada'
+jurisdiction = 'City of Mesquite'
+
+questionInfoIds = [
+  [
+    'underserved',
+    'biking-rate',
+    'walking-rate',
+    'pedestrian-crash',
+    'bicycle-crash',
+    'land-use-diversity',
+    'hu-jpa',
+    'schools',
+    'public-parks',
+    'bus-stops-google-earth',
+    'bike-lanes-rtc',
+  ],
+  [
+    'walkability',
+    'comfort-level',
+    'maps-mini',
+  ],
+]
+recommendationsInfoId = 'nv-recommendations-info'
