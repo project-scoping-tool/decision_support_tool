@@ -85,7 +85,7 @@ class BikeLanesMapWidget extends StatelessWidget {
       }
     }
 
-    final totalCount = bikeLaneFeatures.length + sharedUsePathFeatures.length;
+    // final totalCount = bikeLaneFeatures.length + sharedUsePathFeatures.length;
 
     return Dialog(
       insetPadding: EdgeInsets.all(20.0),
