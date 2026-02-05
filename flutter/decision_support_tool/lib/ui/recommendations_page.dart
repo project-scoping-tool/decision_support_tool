@@ -215,7 +215,7 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
             padding: EdgeInsets.only(top: height * 0.01),
             child: Builder(
               builder: (context) {
-                print('Displaying Recommendation: $recommendedValue');
+                // print('Displaying Recommendation: $recommendedValue');
                 return RichText(
                   text: TextSpan(
                     style: TextStyle(fontSize: fontSize),
@@ -1196,41 +1196,60 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
       justifications.add(controller.text);
     }
 
-    // TODO: You'll need to pass Step 1 and Step 2 data from your ViewModel
-    // For now, using placeholder data
-    List<Map<String, dynamic>> step1Answers = [
-      // You'll need to populate this from your actual Step 1 data
-    ];
+    // Get the question section view models from the parent assessment view model
+    final step1ViewModel =
+        _viewModel.assessmentsViewModel.questionSectionViewModels[0];
+    final step2ViewModel =
+        _viewModel.assessmentsViewModel.questionSectionViewModels[1];
 
-    List<Map<String, dynamic>> step2Answers = [
-      // You'll need to populate this from your actual Step 2 data
-    ];
+    // Prepare Step 1 data
+    List<Map<String, dynamic>> step1Answers = [];
+    for (var i = 0; i < step1ViewModel.questionInfos.length; i++) {
+      final questionInfo = step1ViewModel.questionInfos[i];
+      final selectedIndex = step1ViewModel.selectedAnswerIndices[i].value ?? 0;
+
+      step1Answers.add({
+        'question': 'Q${i + 1}: ${questionInfo.questionText}',
+        'instruction': questionInfo.useUrl,
+        'optionLabels': questionInfo.answers.map((a) => a.text).toList(),
+        'selected': selectedIndex,
+        'category': questionInfo.domain,
+        'points': questionInfo.answers[selectedIndex].points.toString(),
+        'maxPoints': questionInfo.answers.last.points.toString(),
+      });
+    }
+
+    // Prepare Step 2 data
+    List<Map<String, dynamic>> step2Answers = [];
+    for (var i = 0; i < step2ViewModel.questionInfos.length; i++) {
+      final questionInfo = step2ViewModel.questionInfos[i];
+      final selectedIndex = step2ViewModel.selectedAnswerIndices[i].value ?? 0;
+
+      step2Answers.add({
+        'question': 'Q${i + 1}: ${questionInfo.questionText}',
+        'instruction': questionInfo.useUrl,
+        'optionLabels': questionInfo.answers.map((a) => a.text).toList(),
+        'selected': selectedIndex,
+        'category': questionInfo.answerLeadingHeader,
+        'points': questionInfo.answers[selectedIndex].points.toString(),
+        'maxPoints': questionInfo.answers.last.points.toString(),
+      });
+    }
 
     try {
-      // // Import the CreatePDF class
-      // await CreatePDF.generatePDF(
-      //   evaluatorName: evaluator,
-      //   projectName: projectName,
-      //   date: date,
-      //   jurisdiction: _jurisdiction,
-      //   //step1Points: 0.0, // Get from ViewModel
-      //   //step2Points: 0.0, // Get from ViewModel
-      //   step1Answers: step1Answers,
-      //   step2Answers: step2Answers,
-      //   categories: categories,
-      //   radioValues: _radioValues,
-      //   justifications: justifications,
-      //   goodHighlight: _viewModel.isHighlightingGoodColumn,
-      //   betterHighlight: _viewModel.isHighlightingBetterColumn,
-      //   bestHighlight: _viewModel.isHighlightingBestColumn,
-      // );
-
-      // For now, show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('PDF will generate.'),
-          duration: Duration(seconds: 3),
-        ),
+      await CreatePDF.generatePDF(
+        evaluatorName: evaluator,
+        projectName: projectName,
+        date: date,
+        jurisdiction: _jurisdiction,
+        step1Answers: step1Answers,
+        step2Answers: step2Answers,
+        categories: categories,
+        radioValues: _radioValues,
+        justifications: justifications,
+        goodHighlight: _viewModel.isHighlightingGoodColumn,
+        betterHighlight: _viewModel.isHighlightingBetterColumn,
+        bestHighlight: _viewModel.isHighlightingBestColumn,
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

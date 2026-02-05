@@ -16,11 +16,11 @@ class RecommendationsViewModel {
     // DON'T evaluate infrastructureRecommendation here - it will be evaluated lazily
 
     // Log the state when RecommendationsViewModel is created
-    print('=== RECOMMENDATIONS VIEW MODEL CONSTRUCTOR ===');
-    print('Step 1 Points: ${assessmentsViewModel.step1Points}');
-    print('Step 2 Points: ${assessmentsViewModel.step2Points}');
-    print('NOTE: Recommendation will be evaluated when first accessed');
-    print('===============================================');
+    // print('=== RECOMMENDATIONS VIEW MODEL CONSTRUCTOR ===');
+    // print('Step 1 Points: ${assessmentsViewModel.step1Points}');
+    // print('Step 2 Points: ${assessmentsViewModel.step2Points}');
+    // print('NOTE: Recommendation will be evaluated when first accessed');
+    // print('===============================================');
 
     // Determine highlight when recommendation is first accessed
     // This is now done in the infrastructureRecommendation getter
@@ -31,6 +31,9 @@ class RecommendationsViewModel {
 
   /// Parent view model (the assessments view model).
   final AssessmentViewModel _assessmentsViewModel;
+
+  /// Public access to the assessments view model
+  AssessmentViewModel get assessmentsViewModel => _assessmentsViewModel;
 
   /// Go back to the previous page
   void goToPreviousPage() {
@@ -111,7 +114,6 @@ class RecommendationsViewModel {
     print('=== EVALUATING RECOMMENDATION (lazy late final) ===');
     final recommendation = _assessmentsViewModel
         .getInfrastructureRecommendation();
-
     print('Recommendation Code: ${recommendation.recommendedCode}');
     print('Recommendation Text: ${recommendation.recommendedText}');
 
@@ -143,10 +145,10 @@ class RecommendationsViewModel {
         break;
     }
 
-    print('Highlighting Good Column: $isHighlightingGoodColumn');
-    print('Highlighting Better Column: $isHighlightingBetterColumn');
-    print('Highlighting Best Column: $isHighlightingBestColumn');
-    print('====================================================');
+    // print('Highlighting Good Column: $isHighlightingGoodColumn');
+    // print('Highlighting Better Column: $isHighlightingBetterColumn');
+    // print('Highlighting Best Column: $isHighlightingBestColumn');
+    // print('====================================================');
 
     return recommendation;
   }

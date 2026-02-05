@@ -19,271 +19,1000 @@ class CreatePDF {
     required bool bestHighlight,
   }) async {
     final pdf = pw.Document();
+    double pagePadding = 50.0;
+
+    // Load font with Unicode support
+    final theme = pw.ThemeData.withFont(
+      base: await PdfGoogleFonts.robotoRegular(),
+      bold: await PdfGoogleFonts.robotoBold(),
+    );
+
+    // Build content for each page
+    List<pw.Widget> titlePage = _buildTitlePage(
+      evaluatorName,
+      projectName,
+      date,
+      jurisdiction,
+    );
+
+    List<pw.Widget> step1Body_0 = _buildStep1(step1Answers, 0, 6);
+    List<pw.Widget> step1Body_1 = _buildStep1(
+      step1Answers,
+      6,
+      step1Answers.length,
+    );
+
+    List<pw.Widget> step2Body = _buildStep2(step2Answers);
+
+    List<pw.Widget> step3Body_0 = _buildStep3(
+      categories,
+      radioValues,
+      justifications,
+      0,
+      2,
+      true,
+      goodHighlight,
+      betterHighlight,
+      bestHighlight,
+    );
+    List<pw.Widget> step3Body_1 = _buildStep3(
+      categories,
+      radioValues,
+      justifications,
+      2,
+      4,
+      false,
+      goodHighlight,
+      betterHighlight,
+      bestHighlight,
+    );
+    List<pw.Widget> step3Body_2 = _buildStep3(
+      categories,
+      radioValues,
+      justifications,
+      4,
+      6,
+      false,
+      goodHighlight,
+      betterHighlight,
+      bestHighlight,
+    );
+    List<pw.Widget> step3Body_3 = _buildStep3(
+      categories,
+      radioValues,
+      justifications,
+      6,
+      8,
+      false,
+      goodHighlight,
+      betterHighlight,
+      bestHighlight,
+    );
+    List<pw.Widget> step3Body_4 = _buildStep3(
+      categories,
+      radioValues,
+      justifications,
+      8,
+      categories.length,
+      false,
+      goodHighlight,
+      betterHighlight,
+      bestHighlight,
+    );
 
     // Page 1: Title/Cover Page
     pdf.addPage(
       pw.Page(
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              'Decision Support Tool for Project: $projectName',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.SizedBox(height: 15),
-            pw.Text('Name of Evaluator: $evaluatorName'),
-            pw.Text('Name of Project: $projectName'),
-            pw.Text('Date: $date'),
-            pw.Text('Jurisdiction: $jurisdiction'),
-          ],
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
         ),
-      ),
-    );
-
-    // Pages 2-3: Step 1 (split into 2 pages, ~6 questions each)
-    for (var i = 0; i < step1Answers.length; i += 6) {
-      pdf.addPage(
-        pw.Page(
-          build: (context) => pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              if (i == 0)
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.Spacer(),
                 pw.Padding(
-                  padding: pw.EdgeInsets.only(bottom: 15),
+                  padding: pw.EdgeInsets.only(bottom: 10.0),
                   child: pw.Text(
-                    'Step 1',
+                    'Decision Support Tool for Project: $projectName',
                     style: pw.TextStyle(
-                      fontSize: 18,
                       fontWeight: pw.FontWeight.bold,
+                      fontSize: 14.0,
                     ),
                   ),
                 ),
-              ...step1Answers
-                  .skip(i)
-                  .take(6)
-                  .map((q) => _buildQuestionBlock(q)),
-            ],
-          ),
+                pw.Spacer(),
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: titlePage,
+                ),
+                pw.Spacer(),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    // Pages 2-3: Step 1
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
         ),
-      );
-    }
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(
+              children: [
+                pw.Padding(
+                  padding: pw.EdgeInsets.only(bottom: 10.0),
+                  child: pw.Text(
+                    'Step 1',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+                pw.Column(children: step1Body_0),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(children: step1Body_1),
+          );
+        },
+      ),
+    );
 
     // Page 4: Step 2
     pdf.addPage(
       pw.Page(
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              'Step 2',
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(
+              children: [
+                pw.Padding(
+                  padding: pw.EdgeInsets.only(bottom: 10.0),
+                  child: pw.Text(
+                    'Step 2',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+                pw.Column(children: step2Body),
+              ],
             ),
-            pw.SizedBox(height: 15),
-            ...step2Answers.map((q) => _buildQuestionBlock(q)),
+          );
+        },
+      ),
+    );
+
+    // Pages 5-9: Step 3 (landscape)
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(
+              children: [
+                pw.Padding(
+                  padding: pw.EdgeInsets.only(bottom: 10.0),
+                  child: pw.Text(
+                    'Step 3',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+                pw.Column(children: step3Body_0),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(children: step3Body_1),
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(children: step3Body_2),
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(children: step3Body_3),
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat(
+          21.0 * PdfPageFormat.cm,
+          29.7 * PdfPageFormat.cm,
+          marginAll: 1.0 * PdfPageFormat.cm,
+        ),
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: pw.EdgeInsets.only(right: pagePadding),
+            child: pw.Column(children: step3Body_4),
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+  }
+
+  /// Build title page content
+  static List<pw.Widget> _buildTitlePage(
+    String evaluatorName,
+    String projectName,
+    String date,
+    String jurisdiction,
+  ) {
+    List<pw.Widget> titlePage = [];
+    double fontSize = 15.0;
+    double titleWidth = 150.0;
+
+    titlePage.add(pw.Padding(padding: pw.EdgeInsets.only(left: 250.0)));
+
+    titlePage.add(
+      pw.Container(
+        alignment: pw.Alignment.centerLeft,
+        width: titleWidth,
+        child: pw.Column(
+          children: [
+            pw.Container(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                'Name of Evaluator:',
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.normal,
+                ),
+              ),
+            ),
+            pw.Container(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                'Name of Project:',
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.normal,
+                ),
+              ),
+            ),
+            pw.Container(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                'Jurisdiction:',
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.normal,
+                ),
+              ),
+            ),
+            pw.Container(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                'Date:',
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.normal,
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
 
-    // Pages 5-9: Step 3 (landscape, ~2 categories per page)
-    for (var i = 0; i < categories.length; i += 2) {
-      final cats = categories.skip(i).take(2).toList();
-      final vals = radioValues.skip(i).take(2).toList();
-      final justs = justifications.skip(i).take(2).toList();
+    titlePage.add(
+      pw.Container(
+        alignment: pw.Alignment.centerLeft,
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                evaluatorName,
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                projectName,
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                jurisdiction,
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                date,
+                style: pw.TextStyle(
+                  color: PdfColors.black,
+                  fontSize: fontSize,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.letter.landscape,
-          margin: pw.EdgeInsets.all(15),
-          build: (context) => pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              if (i == 0)
-                pw.Padding(
-                  padding: pw.EdgeInsets.only(bottom: 10),
+    return titlePage;
+  }
+
+  /// Build Step 1 content
+  static List<pw.Widget> _buildStep1(
+    List<Map<String, dynamic>> step1Answers,
+    int start,
+    int end,
+  ) {
+    final lowSoftColor = PdfColors.grey200;
+    final lowHardColor = PdfColors.blueGrey100;
+    List<pw.Widget> step1 = [];
+    double fontSize = 10.0;
+
+    for (int i = start; i < end && i < step1Answers.length; i++) {
+      PdfColor bgColor = (i - start) % 2 == 0 ? lowSoftColor : lowHardColor;
+      Map<String, dynamic> q = step1Answers[i];
+
+      step1.add(
+        pw.Container(
+          height: 70.0,
+          child: pw.Container(
+            color: bgColor,
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              mainAxisAlignment: pw.MainAxisAlignment.start,
+              children: [
+                // 1st Column - Question and answers
+                pw.Container(
+                  padding: pw.EdgeInsets.symmetric(
+                    vertical: 5.0,
+                    horizontal: 5.0,
+                  ),
+                  width: 620.0,
+                  child: pw.Column(
+                    children: [
+                      // Question
+                      pw.Align(
+                        alignment: pw.Alignment.centerLeft,
+                        child: pw.Container(
+                          padding: pw.EdgeInsets.all(3.0),
+                          child: pw.Text(
+                            q['question'],
+                            style: pw.TextStyle(fontSize: fontSize),
+                          ),
+                        ),
+                      ),
+                      // Instruction
+                      pw.Row(
+                        children: [
+                          pw.Container(
+                            padding: pw.EdgeInsets.only(left: 5.0),
+                            alignment: pw.Alignment.centerLeft,
+                            child: pw.Text(
+                              q['instruction'],
+                              style: pw.TextStyle(fontSize: fontSize),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Container(padding: pw.EdgeInsets.only(top: 1.0)),
+                      // Answer options
+                      pw.Container(
+                        child: pw.Row(
+                          children: [
+                            pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  child: pw.Text(
+                                    q['category'],
+                                    style: pw.TextStyle(
+                                      fontSize: fontSize,
+                                      fontWeight: pw.FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            pw.Container(
+                              padding: pw.EdgeInsets.only(
+                                right: 30.0,
+                                left: 10.0,
+                              ),
+                              width: 570.0,
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.start,
+                                children: _buildAnswersRow(
+                                  q['optionLabels'],
+                                  q['selected'],
+                                  bgColor,
+                                  fontSize,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      pw.Container(padding: pw.EdgeInsets.only(top: 1.0)),
+                    ],
+                  ),
+                ),
+                pw.Container(width: 3.0, color: PdfColors.white),
+                // 2nd column - Domain
+                pw.Container(
+                  padding: pw.EdgeInsets.symmetric(horizontal: 10.0),
+                  alignment: pw.Alignment.center,
+                  color: bgColor,
+                  width: 75.0,
                   child: pw.Text(
-                    'Step 3',
+                    q['category'],
                     style: pw.TextStyle(
-                      fontSize: 16,
+                      fontSize: fontSize,
                       fontWeight: pw.FontWeight.bold,
                     ),
                   ),
                 ),
-              pw.Expanded(
-                child: _buildStep3Table(
-                  cats,
-                  vals,
-                  justs,
-                  i,
-                  goodHighlight,
-                  betterHighlight,
-                  bestHighlight,
-                  i == 0,
+                pw.Container(width: 3.0, color: PdfColors.white),
+                // 3rd column - Points
+                pw.Container(
+                  alignment: pw.Alignment.center,
+                  color: bgColor,
+                  width: 35.0,
+                  child: pw.Text(
+                    '${q['points']}/${q['maxPoints']}',
+                    style: pw.TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
     }
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return step1;
   }
 
-  /// Build question block for Step 1/2
-  static pw.Widget _buildQuestionBlock(Map<String, dynamic> q) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          q['question'],
-          style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 2),
-        pw.Text(q['instruction'], style: pw.TextStyle(fontSize: 8)),
-        pw.SizedBox(height: 3),
-        _buildOptionsRow(q['optionLabels'], q['selected']),
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.end,
-          children: [
-            pw.Text(
-              '${q['category']} ${q['points']}/${q['maxPoints']}',
-              style: pw.TextStyle(fontSize: 8),
-            ),
-          ],
-        ),
-        pw.SizedBox(height: 10),
-      ],
-    );
-  }
-
-  /// Build options row with yellow highlight for selected
-  static pw.Widget _buildOptionsRow(List<String> labels, int selected) {
-    return pw.Wrap(
-      spacing: 3,
-      children: List.generate(labels.length, (i) {
-        return pw.Container(
-          padding: pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: pw.BoxDecoration(
-            color: i == selected ? PdfColors.yellow200 : null,
-            border: pw.Border.all(color: PdfColors.grey300),
-          ),
-          child: pw.Text(labels[i], style: pw.TextStyle(fontSize: 7)),
-        );
-      }),
-    );
-  }
-
-  /// Build Step 3 table
-  static pw.Widget _buildStep3Table(
-    List<Map<String, dynamic>> cats,
-    List<List<List<int>>> vals,
-    List<String> justs,
-    int startIdx,
-    bool goodHL,
-    bool betterHL,
-    bool bestHL,
-    bool showHeader,
+  /// Build answer options row
+  static List<pw.Widget> _buildAnswersRow(
+    List<String> labels,
+    int selected,
+    PdfColor backgroundColor,
+    double fontSize,
   ) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey400),
-      columnWidths: {
-        0: pw.FlexColumnWidth(1.2),
-        1: pw.FlexColumnWidth(2.3),
-        2: pw.FlexColumnWidth(2.3),
-        3: pw.FlexColumnWidth(2.3),
-        4: pw.FlexColumnWidth(1.2),
-      },
-      children: [
-        if (showHeader)
-          pw.TableRow(
-            decoration: pw.BoxDecoration(color: PdfColors.blue400),
-            children: [
-              _hCell('Category'),
-              _hCell(
-                'Good for health promotion',
-                bg: goodHL ? PdfColors.green400 : PdfColors.blueGrey,
-              ),
-              _hCell(
-                'Better for health promotion',
-                bg: betterHL ? PdfColors.green400 : PdfColors.blueGrey,
-              ),
-              _hCell(
-                'Best for health promotion',
-                bg: bestHL ? PdfColors.green400 : PdfColors.blueGrey,
-              ),
-              _hCell('Justification'),
-            ],
+    List<pw.Widget> widgets = [];
+
+    for (int i = 0; i < labels.length; i++) {
+      widgets.add(
+        pw.Container(
+          padding: pw.EdgeInsets.symmetric(
+            horizontal: 150.0 / labels.length,
+            vertical: 1.0,
           ),
-        ...List.generate(cats.length, (i) {
-          return pw.TableRow(
-            children: [
-              _catCell('${startIdx + i + 1}: ${cats[i]['title']}'),
-              _optsCell(cats[i]['goodHealth'], vals[i][0], goodHL),
-              _optsCell(cats[i]['betterHealth'], vals[i][1], betterHL),
-              _optsCell(cats[i]['bestHealth'], vals[i][2], bestHL),
-              _justCell(justs[i]),
-            ],
-          );
-        }),
-      ],
-    );
+          child: pw.Container(
+            padding: pw.EdgeInsets.symmetric(horizontal: 3.0),
+            color: backgroundColor,
+            child: pw.Text(
+              labels[i],
+              style: pw.TextStyle(
+                color: PdfColors.black,
+                fontSize: fontSize,
+                fontWeight: i == selected
+                    ? pw.FontWeight.bold
+                    : pw.FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return widgets;
   }
 
-  static pw.Widget _hCell(String txt, {PdfColor? bg}) => pw.Container(
-    padding: pw.EdgeInsets.all(5),
-    color: bg,
-    child: pw.Text(
-      txt,
-      style: pw.TextStyle(
-        fontSize: 8,
-        fontWeight: pw.FontWeight.bold,
-        color: PdfColors.white,
-      ),
-      textAlign: pw.TextAlign.center,
-    ),
-  );
+  /// Build Step 2 content
+  static List<pw.Widget> _buildStep2(List<Map<String, dynamic>> step2Answers) {
+    final lowSoftColor = PdfColors.grey200;
+    final lowHardColor = PdfColors.blueGrey100;
+    List<pw.Widget> step2 = [];
+    double fontSize = 10.0;
 
-  static pw.Widget _catCell(String txt) => pw.Container(
-    padding: pw.EdgeInsets.all(5),
-    child: pw.Text(
-      txt,
-      style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
-    ),
-  );
+    for (int i = 0; i < step2Answers.length; i++) {
+      PdfColor bgColor = i % 2 == 0 ? lowSoftColor : lowHardColor;
+      Map<String, dynamic> q = step2Answers[i];
 
-  static pw.Widget _optsCell(List<String> opts, List<int> sels, bool hl) =>
-      pw.Container(
-        padding: pw.EdgeInsets.all(5),
-        color: hl ? PdfColors.green50 : null,
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: List.generate(opts.length, (i) {
-            final isSel = sels[i] == i;
-            return pw.Padding(
-              padding: pw.EdgeInsets.only(bottom: 2),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('• ', style: pw.TextStyle(fontSize: 7)),
-                  pw.Expanded(
+      step2.add(
+        pw.Container(
+          height: 70.0,
+          child: pw.Container(
+            color: bgColor,
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              mainAxisAlignment: pw.MainAxisAlignment.start,
+              children: [
+                // 1st Column
+                pw.Container(
+                  padding: pw.EdgeInsets.symmetric(
+                    vertical: 5.0,
+                    horizontal: 5.0,
+                  ),
+                  width: 670.0,
+                  child: pw.Column(
+                    children: [
+                      pw.Align(
+                        alignment: pw.Alignment.centerLeft,
+                        child: pw.Container(
+                          padding: pw.EdgeInsets.all(3.0),
+                          child: pw.Text(
+                            q['question'],
+                            style: pw.TextStyle(fontSize: fontSize),
+                          ),
+                        ),
+                      ),
+                      pw.Row(
+                        children: [
+                          pw.Container(
+                            padding: pw.EdgeInsets.only(left: 5.0),
+                            alignment: pw.Alignment.centerLeft,
+                            child: pw.Text(
+                              q['instruction'],
+                              style: pw.TextStyle(fontSize: fontSize),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Container(padding: pw.EdgeInsets.only(top: 1.0)),
+                      pw.Container(
+                        child: pw.Row(
+                          children: [
+                            pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  child: pw.Text(
+                                    q['category'],
+                                    style: pw.TextStyle(
+                                      fontSize: fontSize,
+                                      fontWeight: pw.FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            pw.Container(
+                              padding: pw.EdgeInsets.only(
+                                right: 30.0,
+                                left: 10.0,
+                              ),
+                              width: 625.0,
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.start,
+                                children: _buildAnswersRow(
+                                  q['optionLabels'],
+                                  q['selected'],
+                                  bgColor,
+                                  fontSize,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      pw.Container(padding: pw.EdgeInsets.only(top: 1.0)),
+                    ],
+                  ),
+                ),
+                pw.Container(width: 3.0, color: PdfColors.white),
+                // 2nd column - Points
+                pw.Container(
+                  alignment: pw.Alignment.center,
+                  color: bgColor,
+                  width: 65.0,
+                  child: pw.Text(
+                    '${q['points']}/${q['maxPoints']}',
+                    style: pw.TextStyle(
+                      fontSize: fontSize - 2,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return step2;
+  }
+
+  /// Build Step 3 content
+  static List<pw.Widget> _buildStep3(
+    List<Map<String, dynamic>> categories,
+    List<List<List<int>>> radioValues,
+    List<String> justifications,
+    int startIndex,
+    int endIndex,
+    bool hasHeader,
+    bool goodHighlight,
+    bool betterHighlight,
+    bool bestHighlight,
+  ) {
+    final highSoftColor = PdfColors.green50;
+    final lowSoftColor = PdfColors.grey200;
+    final lowHardColor = PdfColors.blueGrey100;
+    List<pw.Widget> rows = [];
+    double fontSize = 10.0;
+    double columnWidth = 145.0;
+    PdfColor headerHighlight = PdfColors.greenAccent700;
+
+    // Add header for Step 3
+    if (hasHeader) {
+      rows.add(
+        pw.Padding(
+          padding: pw.EdgeInsets.only(bottom: 3.0),
+          child: pw.Container(
+            height: 50.0,
+            child: pw.Row(
+              children: [
+                pw.Container(
+                  color: PdfColors.blue400,
+                  width: columnWidth,
+                  child: pw.Container(
+                    alignment: pw.Alignment.center,
+                    padding: pw.EdgeInsets.all(10.0),
                     child: pw.Text(
-                      opts[i],
+                      'Category',
                       style: pw.TextStyle(
-                        fontSize: 6,
-                        fontWeight: isSel ? pw.FontWeight.bold : null,
+                        fontSize: fontSize,
+                        fontWeight: pw.FontWeight.bold,
                       ),
                     ),
                   ),
-                ],
+                ),
+                pw.Container(width: 3.0, color: PdfColors.white),
+                pw.Container(
+                  color: goodHighlight ? headerHighlight : PdfColors.blue400,
+                  width: columnWidth,
+                  child: pw.Container(
+                    alignment: pw.Alignment.center,
+                    padding: pw.EdgeInsets.all(10.0),
+                    child: pw.Text(
+                      'Good for health promotion',
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                pw.Container(width: 3.0, color: PdfColors.white),
+                pw.Container(
+                  color: betterHighlight ? headerHighlight : PdfColors.blue400,
+                  width: columnWidth,
+                  child: pw.Container(
+                    alignment: pw.Alignment.center,
+                    padding: pw.EdgeInsets.all(10.0),
+                    child: pw.Text(
+                      'Better for health promotion',
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                pw.Container(width: 3.0, color: PdfColors.white),
+                pw.Container(
+                  color: bestHighlight ? headerHighlight : PdfColors.blue400,
+                  width: columnWidth,
+                  child: pw.Container(
+                    alignment: pw.Alignment.center,
+                    padding: pw.EdgeInsets.all(10.0),
+                    child: pw.Text(
+                      'Best for health promotion',
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                pw.Container(width: 3.0, color: PdfColors.white),
+                pw.Container(
+                  color: PdfColors.blue400,
+                  width: columnWidth,
+                  child: pw.Container(
+                    alignment: pw.Alignment.center,
+                    padding: pw.EdgeInsets.all(10.0),
+                    child: pw.Text(
+                      'Justification',
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Add category rows
+    for (int i = startIndex; i < endIndex && i < categories.length; i++) {
+      PdfColor bgColor = (i - startIndex) % 2 == 0
+          ? lowSoftColor
+          : lowHardColor;
+      PdfColor bgHighlight = highSoftColor;
+
+      Map<String, dynamic> cat = categories[i];
+      List<List<int>> vals = radioValues[i];
+      String just = justifications[i];
+
+      // Build options columns
+      List<pw.Widget> goodOptions = _buildOptionsColumn(
+        cat['goodHealth'],
+        vals[0],
+        goodHighlight ? bgHighlight : bgColor,
+        columnWidth,
+        fontSize,
+      );
+
+      List<pw.Widget> betterOptions = _buildOptionsColumn(
+        cat['betterHealth'],
+        vals[1],
+        betterHighlight ? bgHighlight : bgColor,
+        columnWidth,
+        fontSize,
+      );
+
+      List<pw.Widget> bestOptions = _buildOptionsColumn(
+        cat['bestHealth'],
+        vals[2],
+        bestHighlight ? bgHighlight : bgColor,
+        columnWidth,
+        fontSize,
+      );
+
+      rows.add(
+        pw.Container(
+          color: bgColor,
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: columnWidth,
+                child: pw.Align(
+                  alignment: pw.Alignment.centerLeft,
+                  child: pw.Container(
+                    padding: pw.EdgeInsets.all(5.0),
+                    child: pw.Text(
+                      '${i + 1}: ${cat['title']}',
+                      style: pw.TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            );
-          }),
+              pw.Container(width: 3.0, color: PdfColors.white),
+              pw.Container(
+                color: goodHighlight ? bgHighlight : bgColor,
+                alignment: pw.Alignment.centerLeft,
+                padding: pw.EdgeInsets.symmetric(horizontal: 3.0),
+                width: columnWidth,
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.start,
+                  children: goodOptions,
+                ),
+              ),
+              pw.Container(width: 3.0, color: PdfColors.white),
+              pw.Container(
+                color: betterHighlight ? bgHighlight : bgColor,
+                alignment: pw.Alignment.centerLeft,
+                padding: pw.EdgeInsets.symmetric(horizontal: 3.0),
+                width: columnWidth,
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.start,
+                  children: betterOptions,
+                ),
+              ),
+              pw.Container(width: 3.0, color: PdfColors.white),
+              pw.Container(
+                color: bestHighlight ? bgHighlight : bgColor,
+                alignment: pw.Alignment.centerLeft,
+                padding: pw.EdgeInsets.symmetric(horizontal: 3.0),
+                width: columnWidth,
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.start,
+                  children: bestOptions,
+                ),
+              ),
+              pw.Container(width: 3.0, color: PdfColors.white),
+              pw.Container(
+                padding: pw.EdgeInsets.all(4.0),
+                width: columnWidth,
+                child: pw.Text(just, style: pw.TextStyle(fontSize: fontSize)),
+              ),
+            ],
+          ),
         ),
       );
 
-  static pw.Widget _justCell(String txt) => pw.Container(
-    padding: pw.EdgeInsets.all(5),
-    child: pw.Text(txt, style: pw.TextStyle(fontSize: 6)),
-  );
+      if (i < endIndex - 1 && i < categories.length - 1) {
+        rows.add(pw.Container(height: 3.0, color: PdfColors.white));
+      }
+    }
+
+    return rows;
+  }
+
+  /// Build options column for Step 3
+  static List<pw.Widget> _buildOptionsColumn(
+    List<String> options,
+    List<int> selections,
+    PdfColor bgColor,
+    double columnWidth,
+    double fontSize,
+  ) {
+    List<pw.Widget> widgets = [];
+
+    for (int i = 0; i < options.length; i++) {
+      bool isSelected = selections[i] == i;
+      widgets.add(
+        pw.Container(
+          width: columnWidth - 6.0,
+          color: bgColor,
+          child: pw.Padding(
+            padding: pw.EdgeInsets.all(3.0),
+            child: pw.Text(
+              '\u2022 ${options[i]}',
+              textAlign: pw.TextAlign.left,
+              style: pw.TextStyle(
+                fontSize: fontSize,
+                fontWeight: isSelected
+                    ? pw.FontWeight.bold
+                    : pw.FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return widgets;
+  }
 }
