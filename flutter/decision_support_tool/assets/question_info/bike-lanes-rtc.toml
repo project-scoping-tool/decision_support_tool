@@ -4,8 +4,8 @@ url = 'https://www.arcgis.com/home/webmap/viewer.html?url=http%3A%2F%2Fgis.rtcsn
 answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 4.0 }]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
-buttonText = ''
+autoFillEnabled = true
+buttonText = 'Bike Lanes'
 instructionsMarkdown = '''
 * Click on the RTC data link, [available here](https://www.arcgis.com/home/webmap/viewer.html?url=http%3A%2F%2Fgis.rtcsnv.com%2Farcgis%2Frest%2Fservices%2FWeb%2FPROD_BIKE%2FMapServer&source=sd).
 * In the search box above the map on the top right of the screen, enter the address for the project area

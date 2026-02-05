@@ -14,6 +14,9 @@ import 'package:decision_support_tool/services/bus_stops_map_service_flutter.dar
 import 'package:decision_support_tool/ui/bus_stops_map_widget.dart';
 import 'package:decision_support_tool/ui/autofill_result_dialog.dart';
 import 'package:decision_support_tool/ui/autofill_map_dialog.dart';
+import 'package:decision_support_tool/services/bike_lanes_query_service.dart';
+import 'package:decision_support_tool/services/bike_lanes_map_service.dart';
+import 'package:decision_support_tool/ui/bike_lanes_map_widget.dart';
 
 class QuestionSectionPage extends StatefulWidget {
   const QuestionSectionPage({
@@ -47,6 +50,9 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
   /// Store the last bus stops query result for map display
   BusStopsQueryResult? _lastBusStopsResult;
+
+  /// Store the last bike lines query result for map display
+  BikeLanesQueryResult? _lastBikeLanesResult;
 
   QuestionSectionViewModel get _viewModel => widget.viewModel;
   String get _jurisdiction => widget.viewModel.assessmentInfo.jurisdiction;
@@ -870,6 +876,12 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         onPressed = () => _fetchAdiValue(questionIndex);
         break;
 
+      case 'Bike Lanes':
+        buttonText = 'Auto-fill from Bike Lane Data';
+        buttonIcon = Icons.directions_bike;
+        onPressed = () => _fetchBikeLanesCount(questionIndex);
+        break;
+
       default:
         debugPrint(
           'No auto-fill configuration for question: ${questionInfo.questionText}',
@@ -1110,6 +1122,52 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
+  Future<void> _showBikeLanesMap() async {
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: _lastBikeLanesResult,
+        noDataMessage: 'No bike lanes data available to display map.',
+        loadingMessage: 'Loading map...',
+
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) =>
+            r.bikeLaneLayerId, // Use bike lane layer ID as primary
+
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId, // This will be bikeLaneLayerId
+            }) async {
+              // We need both layer IDs, so get them from the result
+              return BikeLanesMapService.getMapData(
+                lon: lon,
+                lat: lat,
+                matchedAddress: matchedAddress,
+                bikeLaneLayerId: _lastBikeLanesResult!.bikeLaneLayerId,
+                sharedUsePathLayerId:
+                    _lastBikeLanesResult!.sharedUsePathLayerId,
+              );
+            },
+
+        buildMapWidget: (mapData) => BikeLanesMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          bikeLaneFeatures: mapData.bikeLaneFeatures,
+          sharedUsePathFeatures: mapData.sharedUsePathFeatures,
+          bikeLaneLayerId: mapData.bikeLaneLayerId,
+          sharedUsePathLayerId: mapData.sharedUsePathLayerId,
+        ),
+      ),
+    );
+  }
+
   /// Show bus stops map in a dialog using Flutter widgets
   Future<void> _showBusStopsMap() async {
     await showAutoFillMapDialog(
@@ -1151,65 +1209,6 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
-  // Future<void> _showBusStopsMap() async {
-  //   if (_lastBusStopsResult == null) {
-  //     _showErrorDialog('No bus stops data available to display map.');
-  //     return;
-  //   }
-
-  //   try {
-  //     // Show loading dialog
-  //     showDialog(
-  //       context: context,
-  //       barrierDismissible: false,
-  //       builder: (context) => Center(
-  //         child: Container(
-  //           padding: EdgeInsets.all(20.0),
-  //           decoration: BoxDecoration(
-  //             color: Colors.white,
-  //             borderRadius: BorderRadius.circular(8.0),
-  //           ),
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               CircularProgressIndicator(),
-  //               SizedBox(height: 16.0),
-  //               Text('Loading bus stops map...'),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //     );
-
-  //     // Get map data
-  //     final mapData = await BusStopsMapService.getMapData(
-  //       lon: _lastBusStopsResult!.lon,
-  //       lat: _lastBusStopsResult!.lat,
-  //       matchedAddress: _lastBusStopsResult!.matchedAddress,
-  //       layerId: _lastBusStopsResult!.layerId,
-  //     );
-
-  //     // Close loading dialog
-  //     Navigator.of(context).pop();
-
-  //     // Show map widget
-  //     showDialog(
-  //       context: context,
-  //       builder: (context) => BusStopsMapWidget(
-  //         lat: mapData.lat,
-  //         lon: mapData.lon,
-  //         matchedAddress: mapData.matchedAddress,
-  //         busStopFeatures: mapData.busStopFeatures,
-  //         layerId: mapData.layerId,
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     // Close loading dialog if still open
-  //     Navigator.of(context).pop();
-  //     _showErrorDialog('Error loading bus stops map: $e');
-  //   }
-  // }
-
   /// Show error dialog
   void _showErrorDialog(String message) {
     showDialog(
@@ -1236,6 +1235,55 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         );
       },
     );
+  }
+
+  /// Fetch bike lanes and shared use paths count using the Dart service
+  Future<void> _fetchBikeLanesCount(int questionIndex) async {
+    try {
+      _viewModel.setFetchingParksData(true);
+
+      // Get the project address from the text controller
+      final address = _projectAddressController.text.trim();
+
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+
+      // Call the bike lanes service
+      final result = await BikeLanesQueryService.countBikeLanesNearAddress(
+        address,
+      );
+
+      // Store the result for map display
+      _lastBikeLanesResult = result;
+
+      // Find the answer index that matches
+      final questionInfo = _questionInfos[questionIndex];
+      int answerIndex = questionInfo.answers.indexWhere(
+        (a) => a.text == result.answer,
+      );
+
+      if (answerIndex != -1) {
+        // Auto-select the answer
+        _viewModel.selectAnswer(questionIndex, answerIndex);
+
+        // Show success dialog with results
+        _showBikeLanesResultDialog(
+          result.count,
+          result.matchedAddress,
+          result.answer,
+          result.bikeLaneLayerId,
+          result.sharedUsePathLayerId,
+        );
+      } else {
+        _showErrorDialog('Could not match answer: ${result.answer}');
+      }
+    } catch (e) {
+      _showErrorDialog('Error fetching bike lanes data: $e');
+    } finally {
+      _viewModel.setFetchingParksData(false);
+    }
   }
 
   /// Fetch ADI value using the Dart service
@@ -1279,6 +1327,34 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     } finally {
       _viewModel.setFetchingParksData(false);
     }
+  }
+
+  void _showBikeLanesResultDialog(
+    int count,
+    String matchedAddress,
+    String answer,
+    int bikeLaneLayerId,
+    int sharedUsePathLayerId,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Bike Lanes & Shared Use Paths Query Results',
+        foundLabel: 'Bike Infrastructure Found:',
+        foundValueText: '$count feature(s) within ¼ mile radius',
+        foundIcon: Icons.directions_bike,
+        dataSourceText:
+            'Data from RTC (Regional Transportation Commission) layers',
+        onViewMap: _showBikeLanesMap,
+        // Use bike-themed colors
+        foundIconColor: Colors.blue[700],
+        foundBoxBg: Colors.blue[50],
+        foundBoxBorder: Colors.blue[300],
+      ),
+    );
   }
 
   void _showAdiResultDialog(
