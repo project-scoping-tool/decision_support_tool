@@ -47,6 +47,7 @@ final testStaticData1 = StaticData(
       instructionsMarkdown: '',
       videoId: '',
       hint: '',
+      buttonText: '',
     ),
     'qi2': QuestionInfo(
       questionText: 'questionText2',
@@ -61,6 +62,7 @@ final testStaticData1 = StaticData(
       instructionsMarkdown: '',
       videoId: '',
       hint: '',
+      buttonText: '',
     ),
     'qi3': QuestionInfo(
       questionText: 'questionText3',
@@ -76,6 +78,7 @@ final testStaticData1 = StaticData(
       instructionsMarkdown: '',
       videoId: '',
       hint: '',
+      buttonText: '',
     ),
   },
   recommendationsInfoMap: {

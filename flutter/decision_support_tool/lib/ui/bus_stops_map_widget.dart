@@ -142,8 +142,10 @@ class BusStopsMapWidget extends StatelessWidget {
                         point: LatLng(lat, lon),
                         radius: 402.336, // 0.25 miles in meters
                         useRadiusInMeter: true,
-                        color: Colors.orange.withOpacity(0.1),
-                        borderColor: Colors.orange[700]!,
+                        color: Colors.blue.withOpacity(0.1),
+                        // color: Colors.orange.withOpacity(0.1),
+                        borderColor: Colors.blue[700]!,
+                        //borderColor: Colors.orange[700]!,
                         borderStrokeWidth: 2.0,
                       ),
                     ],
