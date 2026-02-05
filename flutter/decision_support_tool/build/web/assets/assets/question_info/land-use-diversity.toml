@@ -1,0 +1,32 @@
+questionText = 'What is the land use diversity index? (jobs to housing)'
+useUrl = 'Use EPA Smart Location database'
+url = 'https://geodata.epa.gov/arcgis/rest/services/OA/SmartLocationDatabase/MapServer'
+answers = [
+  { text = '0-2', points = 1.0 },
+  { text = '2-3', points = 1.5 },
+  { text = '3-4', points = 2.0 },
+  { text = '4-5', points = 2.5 },
+  { text = '5-6', points = 3.0 },
+  { text = '6-7', points = 3.5 },
+  { text = '7-8', points = 4.0 },
+  { text = '8-9', points = 4.5 },
+  { text = '9-10', points = 5.0 },
+]
+answerLeadingHeader = 'Diversity:'
+domain = 'Land Use'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link provided for the U.S. Environmental Protection Agency (EPA) Smart Location database, [available here](https://geodata.epa.gov/arcgis/rest/services/OA/SmartLocationDatabase/MapServer).
+* Under "View In," select "ArcGIS Online Map Viewer”
+* Click on the magnifying glass in the bottom right corner and enter the address for the project area inside the text box that appears.
+* On the left, click on "Basemap" (the icon with four small squares) and select "Imagery Hybrid."
+* Click on "Layers" in the top left if it is not already selected.
+* Click on the right-pointing arrow next to "Smart Location Database" to reveal the drop-down menu.
+* Click on the eye icon next to “Land use diversity” to change the visibility.
+  * Zoom in or out on the map to view entire project area
+* Click on "Properties” in the top right. Cross-reference color(s) in the project area with the color/number range listed under “Symbology.”
+  * If the project area straddles multiple color-coded zones, calculate the mid-point value for each Block Group and then compute their average. If this average is a whole number, then choose the lower interval as your response. For instance, if the average is 2, you would select 0-2 as your range, instead of 2-3.
+* Click the corresponding Diversity.'''
+videoId = '1aLMaXKIzLTN6Jr8xLPLox4Uqi2UNJHMk'
+hint = ''

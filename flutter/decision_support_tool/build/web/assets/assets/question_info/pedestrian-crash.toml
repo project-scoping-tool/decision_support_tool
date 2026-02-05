@@ -1,0 +1,31 @@
+
+questionText = 'What is the pedestrian crash density in the area? (pedestrian crashes/sq. mile)'
+useUrl = 'Use pedestrian crash data map'
+url = 'https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=d4aff382b1e6440786db5777c29e2022'
+answers = [
+  { text = '0-8', points = 1.0 },
+  { text = '9-16', points = 2.0 },
+  { text = '17-27', points = 3.0 },
+  { text = '28-47', points = 4.0 },
+  { text = '48+', points = 5.0 },
+]
+answerLeadingHeader = 'Crashes:'
+domain = 'Crash'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for Nevada Pedestrian Crash Data 2018-2021, available [here](https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=d4aff382b1e6440786db5777c29e2022).
+* Enter an address within the project area into the search bar and click "Search."
+* Select the "Screening" tool icon under the address search bar. (The button may be hidden by the address search, click anywhere on the map to get it to minimize and reveal the button.)
+* Under "Place Name,” re-enter the address in "Search for a Location" bar
+* Under "Show Results Within," enter 0.25 miles for Buffer Distance. A red circle with a 0.25 mile radius will appear around the address. You may need to zoom out to see it.
+* Click "Draw" and select draw mode "POLYLINE."
+* Use the POLYLINE tool to draw a line along the project's exterior perimeter. Left-click at a point on the map to begin drawing. Left-click again at the end of each segment. Double-click to complete the drawing. (Note: this may be different for Mac and PC users.)
+* Click "Report" inside the "Screening" Box.
+* Click on the top Gear Icon next to the Print icon. Under "Choose Units of Analysis" make sure the units are "Square Miles" for area and "Miles" for length. Hit "Close."
+* Calculate the pedestrian crash density in the area:
+  * Note the number of pedestrian crashes in the project's buffer zone. This is displayed in parentheses to the right of "Pedestrian Crashes 2018-2021."
+  * Divide the number of pedestrian crashes by the buffer zone's area in mi2. This area is displayed in the Screening Box above the Gear and Print Icons. Round to the nearest whole number.
+* Return to the DST to click on the associated range or value.'''
+videoId = '1t34H40QXmlnKO9iO5pMTtZ1IZV8PbMQk'
+hint = ''

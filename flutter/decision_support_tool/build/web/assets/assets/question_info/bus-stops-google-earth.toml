@@ -1,0 +1,26 @@
+questionText = 'How many bus stops are within ¼ mile radius?'
+useUrl = 'Go to Google Earth'
+# TODO: Link needs updating
+url = 'https://earth.google.com/web/@0,0,0a,22251752.77375655d,35y,0h,0t,0r'
+answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 2.0 }]
+
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = ''
+# TODO: Update link in the instructions as well
+instructionsMarkdown = '''
+* Click on the Google Earth link (LINK)
+* In the search box above the map view on the top left of the screen, enter the address for the project area
+  * Click the “Save to project” text, a small window will popped up  then just hit the  “Local KML file” to save the marker on the selected address. Click “Save to project” again to mark the location.
+* Click “View” text at the top of the search bar, then select “Layers”. In the pop-up window, choose “Everything” to display bus stops with little bus symbols that will appear on the map.
+* Zoom in and out (as needed) until the map displays about 1/4 mile in each direction from the project area 
+* Go to “Tools” in the top menu and click on Settings”
+* Scroll down to Format and units to ensure “Imperial” is selected under Unit system, then click Done
+* Click the “Measurement” icon (a ruler)
+  * Click on a point in the project area and then drag the measurement line to nearest part of the bus stop symbol to reveal the distance. A quarter-mile is 1,320 feet.
+  * Continue this process for all closely located bus stop symbols and make a note of which bus stops are within 1/4-mile radius of project area
+  * If there is at least 1 bus stop within ¼ mile select option “1 or more”; if there
+* there are no bus stops within ¼ mile, select option “0”.'''
+videoId = '19WI6ACt149qL5G6ONZwZXlLELEggYdRZ'
+hint = ''

@@ -1,0 +1,29 @@
+
+questionText = 'How many public parks are in the project area or within ½ mile radius?'
+useUrl = 'Use City of Las Vegas data'
+url = 'https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas'
+answers = [
+  { text = '0', points = 0.0 },
+  { text = '1', points = 1.0 },
+  { text = '>1', points = 2.0 },
+]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for the City of Las Vegas Interactive Map, [available here](https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas).
+* Click “OK” on the opening disclaimer, if it appears.
+* Click on the “Right of Way” option on the left sidebar.
+* Check the “Parks” option.
+* Enter the address of the project area into the search bar at the top of the map then hit enter.
+* Zoom out from the address area using the minus (-) button on the lower right of the map
+* Parks will appear color-coded on the map to indicate their locations. The legend can be viewed by clicking on the “legend” icon next to the Park option.
+* Zoom in and out as needed to see parks within ½ mile radius
+* To measure distance, click the ruler icon (Map tools) on the top left of the map window
+  * Click on a point in the project area that is closest to the park and then drag the measurement line to the nearest part of the park to reveal the distance
+  * Select “miles” on the drop-down menu for “unit”
+  * Continue this process until it is clear if there are 0, 1, or >1 parks within ½ mile
+  * Select the answer below that corresponds to the number of parks located within ½ mile of the project area'''
+videoId = '12EK4W-RLcVD1_Hio1L77Gnq4N1VzpFnR'
+hint = ''

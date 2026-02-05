@@ -1,0 +1,25 @@
+questionText = 'What is the National Walkability Index Score?'
+useUrl = 'Use EPA National Walkability Score'
+url = 'https://geodata.epa.gov/arcgis/rest/services/OA/WalkabilityIndex/MapServer'
+answers = [
+  { text = '1-5.75', points = 3.125 },
+  { text = '5.76-10.50', points = 6.25 },
+  { text = '10.51-15.25', points = 9.375 },
+  { text = '15.26-20', points = 12.5 },
+]
+answerLeadingHeader = 'Index:'
+domain = ''
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click the link provided for the U.S. Environmental Protection Agency (EPA) National Walkability Score, [available here](https://geodata.epa.gov/arcgis/rest/services/OA/WalkabilityIndex/MapServer).
+  * Under "View In," select "ArcGIS Online Map Viewer”
+* Click on the magnifying glass in the bottom right corner. Enter the address of the project area into the search bar then either press enter or click on the magnifying glass icon on the right side of the search bar.
+* On the left, click on "Basemap" (the icon with four small squares) and select "Imagery Hybrid."
+* Click on "Properties” in the top right. Cross-reference color(s) in the project area with the color/number range listed under “Symbology.”
+* For each color-coded Block Group, convert the National Walkability Score to a numerical value as follow: 1-5.75→ 1; 5.76-10.50 → 2; 10.51-15.25 → 3; 15.26-20 → 4
+  * If the project area straddles multiple color-coded zones in the map view, compute the average of the numerical values. Round decimal of .5 or more up to the next whole number and decimals under .5 down.
+* Then, convert the numerical value back to the corresponding National Walkability Score.
+* Select the corresponding National Walkability Score.'''
+videoId = '1nzJ0DUB_-THeY1RWtSegMZBvltc1wiJ1'
+hint = ''

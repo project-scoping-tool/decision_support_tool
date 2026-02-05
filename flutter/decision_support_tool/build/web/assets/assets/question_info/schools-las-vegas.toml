@@ -1,0 +1,29 @@
+
+questionText = 'How many schools (CCSD, private, or charter) are in the area and within ½ mile radius?'
+useUrl = 'Use City of Las Vegas data'
+url = 'https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas'
+answers = [
+  { text = '0', points = 0.0 },
+  { text = '1', points = 1.0 },
+  { text = '>1', points = 2.0 },
+]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for the City of Las Vegas Interactive Map, [available here](https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas).
+* Click “OK” on the opening disclaimer, if it appears.
+* Click on the “Community Services” option on the left sidebar
+* Check the “CCSD Schools” and the “CLV Private Schools” options.
+* Enter the address of the project area into the search bar at the top of the map then hit enter. 
+* Zoom out from the address area using the minus (-) button on the lower right of the map
+* Both CCSD and private schools will appear coded on the map to indicate their locations. The coding legends can be viewed by clicking on the “legend” icon next to the selected options.
+* Zoom in and out as needed to see schools within ½ mile radius
+* To measure distance, click the ruler icon (Map tools) on the top left of the map window
+  * Click on a point in the project area that is closest to the school and then drag the measurement line to the nearest part of the school to reveal the distance
+  * Select “miles” on the drop-down menu for “unit”
+  * Continue this process until it is clear if there are 0, 1, or >1 schools within ½ mile
+  * Select the answer below that corresponds to the number of schools located within ½ mile of the project area'''
+videoId = '1pMxCI3c9LHEFMT62iTcONjo7Pb9kpM3o'
+hint = ''

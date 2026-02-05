@@ -1,0 +1,27 @@
+
+questionText = 'How many public parks are in the project area or within ½ mile radius?'
+useUrl = 'Use Clark County data'
+url = 'https://www.arcgis.com/home/webmap/viewer.html?useExisting=1&layers=7b483a11c0b3489d8ce7601081872f99'
+answers = [
+  { text = '0', points = 0.0 },
+  { text = '1', points = 1.0 },
+  { text = '>1', points = 2.0 },
+]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = true
+buttonText = 'Parks'
+instructionsMarkdown = '''
+* Click on the Clark County Recreation data link, [available here](https://www.arcgis.com/home/webmap/viewer.html?useExisting=1&layers=7b483a11c0b3489d8ce7601081872f99).
+* In the search box above the map on the top right of the screen, enter the address for the project area
+  * Click “Add to Map Notes” in the small box that appears on the project area to save the selected address
+* Click on the “Recreation” menu on the left side information bar, and ensure that the boxes for “Las Vegas Parks,” “Clark County Parks,” “Boulder City Parks,” “Henderson Parks,” “Mesquite Parks,” and “North Las Vegas Parks” are checked. Uncheck the remaining boxes. 
+* Click on “Legend” in the top left to reveal how parks appear on the map.
+* Zoom in and out (as needed) until the map displays about ½ mile in each direction from the project area
+* Click on the “Measure” button near the search bar on the top of the screen
+  * Select the “Distance” icon (a ruler with two arrows above it) and ensure “Miles” is set as the unit of measurement (in a drop-down menu slightly to the right)
+  * Click on a point within the project area closest to the park and then drag the measurement line to the nearest part of the park to reveal the distance 
+  * Continue this process until it is clear if there are 0, 1 or >1 parks within ½ mile
+* Select the answer below that corresponds to the number of parks located within ½ mile of the project area'''
+videoId = '1v6JSEGlquO-Kq2HtjgTd0dXsn5KteHle'
+hint = ''

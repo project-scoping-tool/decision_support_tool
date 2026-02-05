@@ -1,0 +1,23 @@
+questionText = 'How many on-street bike lanes are in the area or within 1/4 mile radius?'
+useUrl = 'Bike streets: Use City of Henderson data'
+url = 'https://www.arcgis.com/apps/mapviewer/index.html?layers=dd2dc7787d024a3f9b54a7ba890de2d3'
+answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 4.0 }]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for the City of Henderson data, [available here](https://www.arcgis.com/apps/mapviewer/index.html?layers=dd2dc7787d024a3f9b54a7ba890de2d3)
+* Click on the magnifying glass icon on the bottom right to search. Enter the address for the project area. Press enter or the search icon.
+* Make sure "Existing on Street Bike Lanes" is selected under the "Layers" menu on the left side of the screen.
+* Existing on-street bike lanes are marked as indicated on the right side of the screen under "Symbology."
+* Zoom until the map displays about 1⁄4 mile in each direction from the project area.
+* Count the number of on-street bike lanes in the project area.
+  * If it is more than 1, select ">1” as your response.
+  * If it is 0 or 1, measure the distance between each nearby on-street bike lane to the closest edge of the project area. 
+* To measure, select "Map tools" and click on the "Measurement"
+  * First click on the project edge and then double-click on the closest part of the bicycle lane to reveal the distance. 
+  * Select "Miles" under "Unit."
+  * Select if there are  0 or 1 or more on-street bicycle lanes within 1⁄4 mile.'''
+videoId = '1Aj3KbQyVegJ-OgbDXvOEvVC3zeAqS4f3'
+hint = ''

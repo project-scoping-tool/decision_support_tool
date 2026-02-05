@@ -1,0 +1,31 @@
+questionText = 'What is the average Microscale Audit of Pedestrian Streetscapes (MAPS) Mini score for all of the segments in the project area?'
+useUrl = 'Conduct MAPS Mini for each segment and then average them to get a MAPS mini score. Link '
+url = 'https://www.drjimsallis.com/maps'
+answers = [
+  { text = '0-1', points = 0.0 },
+  { text = '2-3', points = 2.5 },
+  { text = '4-5', points = 5.0 },
+  { text = '6-7', points = 7.5 },
+  { text = '8-9', points = 10.0 },
+  { text = '10-11', points = 12.5 },
+  { text = '12-13', points = 15.0 },
+  { text = '14-15', points = 17.5 },
+  { text = '16-17', points = 20.0 },
+  { text = '18-19', points = 22.5 },
+  { text = '20-21', points = 25.0 },
+]
+answerLeadingHeader = 'MAPS Mini Score:'
+domain = ''
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click the link provided for the MAPS Mini Survey, [available here](https://www.drjimsallis.com/maps).
+* Click the box on the left-hand side of the page that is labeled “MAPS Mini.”
+  * You should review the “MAPS Mini Protocol and Picture Guide” before going on to the next section, as it provides field procedures for data collection with a more in-depth understanding of how to assess segments during the survey for each question.
+* Click on the MAPS Mini Survey
+* Complete the "MAPS Mini Survey" for each segment - i.e., block. Average the MAPS Mini points for all segments.
+* Use the MAPS Mini Points to derive and record the corresponding DST points.
+* Note: the MAPS Mini Survey may also be completed using online maps, though the information may not be as up-to-date.
+'''
+videoId = '1zUzgSCSfwZu3MJGTe3hWTMy7qyol7_sq'
+hint = ''

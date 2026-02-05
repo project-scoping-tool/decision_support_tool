@@ -1,0 +1,31 @@
+questionText = 'What is the bicycle crash density in the area? (bicycle crashes/sq. mile)'
+useUrl = 'Bicycle Crash - Use bicycle crash data map'
+url = 'https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=615504612df74a94b2a838cf5f619c20'
+answers = [
+  { text = '0-4', points = 1.0 },
+  { text = '5-7', points = 2.0 },
+  { text = '8-10', points = 3.0 },
+  { text = '11-15', points = 4.0 },
+  { text = '15+', points = 5.0 },
+]
+answerLeadingHeader = 'Crashes:'
+domain = 'Crash'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for Nevada Bicycle Crash Data 2018-2021, [available here](https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=615504612df74a94b2a838cf5f619c20).
+* Enter an address within the project area into the search bar and click "Search."
+* Select the "Screening" tool icon under the address search bar. (The button may be hidden by the address search, click anywhere on the map to get it to minimize and reveal the button.)
+* Under "Place Name," re-enter the address in the "Search for a Location" bar.
+* Under "Show Results Within," enter 0.25 miles for Buffer Distance. A red circle with a 0.25 mile radius will appear around the address. You may need to zoom out to see it.
+* Click "Draw" and select draw mode "POLYLINE."
+* Use the POLYLINE tool to draw a line along the project’s exterior perimeter. Left-click at a point on the map to begin drawing. Left-click again at the end of each segment. Double-click to complete the drawing. (Note: this may be different for Mac and PC users.)
+* Click "Report" inside the "Screening" Box.
+* Click on the Gear Icon next to the Print icon. Under "Choose Units of Analysis" make sure the units are "Square Miles" for area and "Miles" for length. Hit Close.
+* Calculate the bicyclist crash density in the area:
+  * Note the number of bicycle crashes in the project's buffer zone. This is displayed in parentheses to the right of "Nevada Bicyclist Crash Data."
+  * Divide the number of bicycle crashes by the buffer zone's area in mi2. This area is displayed in the Screening Box above the Gear and Print Icons.
+  * Round to the nearest whole number.
+* Return to the DST to click on the associated range or value.'''
+videoId = '1i35mlRX2CptCeVOJauJP1NdkBJ6eN3Jb'
+hint = ''

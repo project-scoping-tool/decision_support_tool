@@ -1,0 +1,24 @@
+questionText = 'How many bus stops are within ¼ mile radius?'
+useUrl = 'Use City of Las Vegas data'
+url = 'https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas'
+answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 2.0 }]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for the City of Las Vegas Interactive Map, [available here](https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas).
+* Click “OK” on the opening disclaimer, if it appears.
+* Click on the “Transportation” option on the left side bar.
+* Check the “Bus Stops” option.
+* Enter the address of the project area into the search bar at the top of the map then hit enter.
+* Zoom out from the address area using the minus (-) button on the lower right of the map
+* Bus stops will appear as black-and-white bus icons to indicate locations.
+* Zoom in and out as needed to see bus stops within ¼-mile radius
+* To measure distance, click the ruler icon (Map tools) on the top left of the map window
+  * Click on a point in the project area that is closest to the bus stop and then drag the measurement line to the bus stop icon to reveal the * distance.
+  * Select “miles” on the drop-down menu for “unit”
+  * Continue this process until it is clear if there are 0 or >1 bus stops within  ¼  mile
+  * Select the answer below that corresponds to the number of bus stops located within ¼  mile of the project area'''
+videoId = '14b_ZszX9IgF9eqtsf3JXnIZ8rsYFk0Jx'
+hint = ''
