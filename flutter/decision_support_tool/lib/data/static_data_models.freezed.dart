@@ -632,7 +632,8 @@ mixin _$QuestionInfo {
  String get videoId;/// Additional subtitle text, used for additional notes.
  String get hint;/// Whether the auto-fill button should be shown for this question.
 /// Defaults to false if not specified in the TOML file.
- bool get autoFillEnabled;
+ bool get autoFillEnabled;/// Additional subtitle text, used for additional notes.
+ String get buttonText;
 /// Create a copy of QuestionInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -645,16 +646,16 @@ $QuestionInfoCopyWith<QuestionInfo> get copyWith => _$QuestionInfoCopyWithImpl<Q
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuestionInfo&&(identical(other.questionText, questionText) || other.questionText == questionText)&&(identical(other.useUrl, useUrl) || other.useUrl == useUrl)&&(identical(other.url, url) || other.url == url)&&const DeepCollectionEquality().equals(other.answers, answers)&&(identical(other.answerLeadingHeader, answerLeadingHeader) || other.answerLeadingHeader == answerLeadingHeader)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.instructionsMarkdown, instructionsMarkdown) || other.instructionsMarkdown == instructionsMarkdown)&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.hint, hint) || other.hint == hint)&&(identical(other.autoFillEnabled, autoFillEnabled) || other.autoFillEnabled == autoFillEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuestionInfo&&(identical(other.questionText, questionText) || other.questionText == questionText)&&(identical(other.useUrl, useUrl) || other.useUrl == useUrl)&&(identical(other.url, url) || other.url == url)&&const DeepCollectionEquality().equals(other.answers, answers)&&(identical(other.answerLeadingHeader, answerLeadingHeader) || other.answerLeadingHeader == answerLeadingHeader)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.instructionsMarkdown, instructionsMarkdown) || other.instructionsMarkdown == instructionsMarkdown)&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.hint, hint) || other.hint == hint)&&(identical(other.autoFillEnabled, autoFillEnabled) || other.autoFillEnabled == autoFillEnabled)&&(identical(other.buttonText, buttonText) || other.buttonText == buttonText));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,questionText,useUrl,url,const DeepCollectionEquality().hash(answers),answerLeadingHeader,domain,instructionsMarkdown,videoId,hint,autoFillEnabled);
+int get hashCode => Object.hash(runtimeType,questionText,useUrl,url,const DeepCollectionEquality().hash(answers),answerLeadingHeader,domain,instructionsMarkdown,videoId,hint,autoFillEnabled,buttonText);
 
 @override
 String toString() {
-  return 'QuestionInfo(questionText: $questionText, useUrl: $useUrl, url: $url, answers: $answers, answerLeadingHeader: $answerLeadingHeader, domain: $domain, instructionsMarkdown: $instructionsMarkdown, videoId: $videoId, hint: $hint, autoFillEnabled: $autoFillEnabled)';
+  return 'QuestionInfo(questionText: $questionText, useUrl: $useUrl, url: $url, answers: $answers, answerLeadingHeader: $answerLeadingHeader, domain: $domain, instructionsMarkdown: $instructionsMarkdown, videoId: $videoId, hint: $hint, autoFillEnabled: $autoFillEnabled, buttonText: $buttonText)';
 }
 
 
@@ -665,7 +666,7 @@ abstract mixin class $QuestionInfoCopyWith<$Res>  {
   factory $QuestionInfoCopyWith(QuestionInfo value, $Res Function(QuestionInfo) _then) = _$QuestionInfoCopyWithImpl;
 @useResult
 $Res call({
- String questionText, String useUrl, String url, List<Answer> answers, String answerLeadingHeader, String domain, String instructionsMarkdown, String videoId, String hint, bool autoFillEnabled
+ String questionText, String useUrl, String url, List<Answer> answers, String answerLeadingHeader, String domain, String instructionsMarkdown, String videoId, String hint, bool autoFillEnabled, String buttonText
 });
 
 
@@ -682,7 +683,7 @@ class _$QuestionInfoCopyWithImpl<$Res>
 
 /// Create a copy of QuestionInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? questionText = null,Object? useUrl = null,Object? url = null,Object? answers = null,Object? answerLeadingHeader = null,Object? domain = null,Object? instructionsMarkdown = null,Object? videoId = null,Object? hint = null,Object? autoFillEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? questionText = null,Object? useUrl = null,Object? url = null,Object? answers = null,Object? answerLeadingHeader = null,Object? domain = null,Object? instructionsMarkdown = null,Object? videoId = null,Object? hint = null,Object? autoFillEnabled = null,Object? buttonText = null,}) {
   return _then(_self.copyWith(
 questionText: null == questionText ? _self.questionText : questionText // ignore: cast_nullable_to_non_nullable
 as String,useUrl: null == useUrl ? _self.useUrl : useUrl // ignore: cast_nullable_to_non_nullable
@@ -694,7 +695,8 @@ as String,instructionsMarkdown: null == instructionsMarkdown ? _self.instruction
 as String,videoId: null == videoId ? _self.videoId : videoId // ignore: cast_nullable_to_non_nullable
 as String,hint: null == hint ? _self.hint : hint // ignore: cast_nullable_to_non_nullable
 as String,autoFillEnabled: null == autoFillEnabled ? _self.autoFillEnabled : autoFillEnabled // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,buttonText: null == buttonText ? _self.buttonText : buttonText // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -779,10 +781,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String questionText,  String useUrl,  String url,  List<Answer> answers,  String answerLeadingHeader,  String domain,  String instructionsMarkdown,  String videoId,  String hint,  bool autoFillEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String questionText,  String useUrl,  String url,  List<Answer> answers,  String answerLeadingHeader,  String domain,  String instructionsMarkdown,  String videoId,  String hint,  bool autoFillEnabled,  String buttonText)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuestionInfo() when $default != null:
-return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.answerLeadingHeader,_that.domain,_that.instructionsMarkdown,_that.videoId,_that.hint,_that.autoFillEnabled);case _:
+return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.answerLeadingHeader,_that.domain,_that.instructionsMarkdown,_that.videoId,_that.hint,_that.autoFillEnabled,_that.buttonText);case _:
   return orElse();
 
 }
@@ -800,10 +802,10 @@ return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.an
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String questionText,  String useUrl,  String url,  List<Answer> answers,  String answerLeadingHeader,  String domain,  String instructionsMarkdown,  String videoId,  String hint,  bool autoFillEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String questionText,  String useUrl,  String url,  List<Answer> answers,  String answerLeadingHeader,  String domain,  String instructionsMarkdown,  String videoId,  String hint,  bool autoFillEnabled,  String buttonText)  $default,) {final _that = this;
 switch (_that) {
 case _QuestionInfo():
-return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.answerLeadingHeader,_that.domain,_that.instructionsMarkdown,_that.videoId,_that.hint,_that.autoFillEnabled);case _:
+return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.answerLeadingHeader,_that.domain,_that.instructionsMarkdown,_that.videoId,_that.hint,_that.autoFillEnabled,_that.buttonText);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -820,10 +822,10 @@ return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.an
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String questionText,  String useUrl,  String url,  List<Answer> answers,  String answerLeadingHeader,  String domain,  String instructionsMarkdown,  String videoId,  String hint,  bool autoFillEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String questionText,  String useUrl,  String url,  List<Answer> answers,  String answerLeadingHeader,  String domain,  String instructionsMarkdown,  String videoId,  String hint,  bool autoFillEnabled,  String buttonText)?  $default,) {final _that = this;
 switch (_that) {
 case _QuestionInfo() when $default != null:
-return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.answerLeadingHeader,_that.domain,_that.instructionsMarkdown,_that.videoId,_that.hint,_that.autoFillEnabled);case _:
+return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.answerLeadingHeader,_that.domain,_that.instructionsMarkdown,_that.videoId,_that.hint,_that.autoFillEnabled,_that.buttonText);case _:
   return null;
 
 }
@@ -835,7 +837,7 @@ return $default(_that.questionText,_that.useUrl,_that.url,_that.answers,_that.an
 @JsonSerializable()
 
 class _QuestionInfo implements QuestionInfo {
-   _QuestionInfo({required this.questionText, required this.useUrl, required this.url, required final  List<Answer> answers, required this.answerLeadingHeader, required this.domain, required this.instructionsMarkdown, required this.videoId, required this.hint, this.autoFillEnabled = false}): assert(answers.length >= 1, 'points must not be empty'),assert(answers.isSorted((a, b) => a.points.compareTo(b.points)), 'answers must be sorted from lowest to highest points'),_answers = answers;
+   _QuestionInfo({required this.questionText, required this.useUrl, required this.url, required final  List<Answer> answers, required this.answerLeadingHeader, required this.domain, required this.instructionsMarkdown, required this.videoId, required this.hint, this.autoFillEnabled = false, required this.buttonText}): assert(answers.length >= 1, 'points must not be empty'),assert(answers.isSorted((a, b) => a.points.compareTo(b.points)), 'answers must be sorted from lowest to highest points'),_answers = answers;
   factory _QuestionInfo.fromJson(Map<String, dynamic> json) => _$QuestionInfoFromJson(json);
 
 /// Main question text content.
@@ -869,6 +871,8 @@ class _QuestionInfo implements QuestionInfo {
 /// Whether the auto-fill button should be shown for this question.
 /// Defaults to false if not specified in the TOML file.
 @override@JsonKey() final  bool autoFillEnabled;
+/// Additional subtitle text, used for additional notes.
+@override final  String buttonText;
 
 /// Create a copy of QuestionInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -883,16 +887,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuestionInfo&&(identical(other.questionText, questionText) || other.questionText == questionText)&&(identical(other.useUrl, useUrl) || other.useUrl == useUrl)&&(identical(other.url, url) || other.url == url)&&const DeepCollectionEquality().equals(other._answers, _answers)&&(identical(other.answerLeadingHeader, answerLeadingHeader) || other.answerLeadingHeader == answerLeadingHeader)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.instructionsMarkdown, instructionsMarkdown) || other.instructionsMarkdown == instructionsMarkdown)&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.hint, hint) || other.hint == hint)&&(identical(other.autoFillEnabled, autoFillEnabled) || other.autoFillEnabled == autoFillEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuestionInfo&&(identical(other.questionText, questionText) || other.questionText == questionText)&&(identical(other.useUrl, useUrl) || other.useUrl == useUrl)&&(identical(other.url, url) || other.url == url)&&const DeepCollectionEquality().equals(other._answers, _answers)&&(identical(other.answerLeadingHeader, answerLeadingHeader) || other.answerLeadingHeader == answerLeadingHeader)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.instructionsMarkdown, instructionsMarkdown) || other.instructionsMarkdown == instructionsMarkdown)&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.hint, hint) || other.hint == hint)&&(identical(other.autoFillEnabled, autoFillEnabled) || other.autoFillEnabled == autoFillEnabled)&&(identical(other.buttonText, buttonText) || other.buttonText == buttonText));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,questionText,useUrl,url,const DeepCollectionEquality().hash(_answers),answerLeadingHeader,domain,instructionsMarkdown,videoId,hint,autoFillEnabled);
+int get hashCode => Object.hash(runtimeType,questionText,useUrl,url,const DeepCollectionEquality().hash(_answers),answerLeadingHeader,domain,instructionsMarkdown,videoId,hint,autoFillEnabled,buttonText);
 
 @override
 String toString() {
-  return 'QuestionInfo(questionText: $questionText, useUrl: $useUrl, url: $url, answers: $answers, answerLeadingHeader: $answerLeadingHeader, domain: $domain, instructionsMarkdown: $instructionsMarkdown, videoId: $videoId, hint: $hint, autoFillEnabled: $autoFillEnabled)';
+  return 'QuestionInfo(questionText: $questionText, useUrl: $useUrl, url: $url, answers: $answers, answerLeadingHeader: $answerLeadingHeader, domain: $domain, instructionsMarkdown: $instructionsMarkdown, videoId: $videoId, hint: $hint, autoFillEnabled: $autoFillEnabled, buttonText: $buttonText)';
 }
 
 
@@ -903,7 +907,7 @@ abstract mixin class _$QuestionInfoCopyWith<$Res> implements $QuestionInfoCopyWi
   factory _$QuestionInfoCopyWith(_QuestionInfo value, $Res Function(_QuestionInfo) _then) = __$QuestionInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String questionText, String useUrl, String url, List<Answer> answers, String answerLeadingHeader, String domain, String instructionsMarkdown, String videoId, String hint, bool autoFillEnabled
+ String questionText, String useUrl, String url, List<Answer> answers, String answerLeadingHeader, String domain, String instructionsMarkdown, String videoId, String hint, bool autoFillEnabled, String buttonText
 });
 
 
@@ -920,7 +924,7 @@ class __$QuestionInfoCopyWithImpl<$Res>
 
 /// Create a copy of QuestionInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? questionText = null,Object? useUrl = null,Object? url = null,Object? answers = null,Object? answerLeadingHeader = null,Object? domain = null,Object? instructionsMarkdown = null,Object? videoId = null,Object? hint = null,Object? autoFillEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? questionText = null,Object? useUrl = null,Object? url = null,Object? answers = null,Object? answerLeadingHeader = null,Object? domain = null,Object? instructionsMarkdown = null,Object? videoId = null,Object? hint = null,Object? autoFillEnabled = null,Object? buttonText = null,}) {
   return _then(_QuestionInfo(
 questionText: null == questionText ? _self.questionText : questionText // ignore: cast_nullable_to_non_nullable
 as String,useUrl: null == useUrl ? _self.useUrl : useUrl // ignore: cast_nullable_to_non_nullable
@@ -932,7 +936,8 @@ as String,instructionsMarkdown: null == instructionsMarkdown ? _self.instruction
 as String,videoId: null == videoId ? _self.videoId : videoId // ignore: cast_nullable_to_non_nullable
 as String,hint: null == hint ? _self.hint : hint // ignore: cast_nullable_to_non_nullable
 as String,autoFillEnabled: null == autoFillEnabled ? _self.autoFillEnabled : autoFillEnabled // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,buttonText: null == buttonText ? _self.buttonText : buttonText // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

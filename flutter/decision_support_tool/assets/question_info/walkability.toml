@@ -10,6 +10,7 @@ answers = [
 answerLeadingHeader = 'Index:'
 domain = ''
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Click the link provided for the U.S. Environmental Protection Agency (EPA) National Walkability Score, [available here](https://geodata.epa.gov/arcgis/rest/services/OA/WalkabilityIndex/MapServer).
   * Under "View In," select "ArcGIS Online Map Viewer”

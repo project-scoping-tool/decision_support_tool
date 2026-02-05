@@ -10,6 +10,7 @@ answers = [
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Click on the link for the Clark County Education Data tool, [available here](https://www.arcgis.com/apps/mapviewer/index.html?layers=ca9eba42cebc4b0c965ffe80a3923978).
 * Click on the magnifying glass icon located on the lower right of the map.

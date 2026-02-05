@@ -82,7 +82,7 @@ class BusStopsMapWidget extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               decoration: BoxDecoration(
-                color: Colors.orange[700],
+                color: Colors.blue[700],
                 borderRadius: BorderRadius.vertical(top: Radius.circular(4.0)),
               ),
               child: Row(

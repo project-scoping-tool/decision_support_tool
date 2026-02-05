@@ -12,6 +12,8 @@ import 'package:decision_support_tool/services/parks_map_service.dart';
 import 'package:decision_support_tool/services/bus_stops_query_service.dart';
 import 'package:decision_support_tool/services/bus_stops_map_service_flutter.dart';
 import 'package:decision_support_tool/ui/bus_stops_map_widget.dart';
+import 'package:decision_support_tool/ui/autofill_result_dialog.dart';
+import 'package:decision_support_tool/ui/autofill_map_dialog.dart';
 
 class QuestionSectionPage extends StatefulWidget {
   const QuestionSectionPage({
@@ -849,33 +851,30 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     IconData buttonIcon;
     VoidCallback onPressed;
 
-    // Parks question
-    if (questionInfo.domain == 'Connectivity' &&
-        questionInfo.questionText.toLowerCase().contains('parks')) {
-      buttonText = 'Auto-fill from Clark County Data';
-      buttonIcon = Icons.map;
-      onPressed = () => _fetchParksCount(questionIndex);
-    }
-    // Bus stops question
-    else if (questionInfo.domain == 'Connectivity' &&
-        questionInfo.questionText.toLowerCase().contains('bus')) {
-      buttonText = 'Auto-fill from Bus Stop Data';
-      buttonIcon = Icons.directions_bus;
-      onPressed = () => _fetchBusStopsCount(questionIndex);
-    }
-    // ADI/Equity question
-    else if (questionInfo.domain == 'Equity' &&
-        questionInfo.questionText.toLowerCase().contains('underserved')) {
-      buttonText = 'Auto-fill from ADI Database';
-      buttonIcon = Icons.analytics;
-      onPressed = () => _fetchAdiValue(questionIndex);
-    }
-    // Auto-fill is enabled but we don't have a handler for this question type
-    else {
-      print(
-        'Warning: autoFillEnabled=true but no handler for question: ${questionInfo.questionText}',
-      );
-      return Container();
+    switch (questionInfo.buttonText) {
+      case 'Parks':
+        buttonText = 'Auto-fill from Park Data';
+        buttonIcon = Icons.map;
+        onPressed = () => _fetchParksCount(questionIndex);
+        break;
+
+      case 'Bus Stops':
+        buttonText = 'Auto-fill from Bus Stop Data';
+        buttonIcon = Icons.directions_bus;
+        onPressed = () => _fetchBusStopsCount(questionIndex);
+        break;
+
+      case 'ADI':
+        buttonText = 'Auto-fill from ADI Database';
+        buttonIcon = Icons.analytics;
+        onPressed = () => _fetchAdiValue(questionIndex);
+        break;
+
+      default:
+        debugPrint(
+          'No auto-fill configuration for question: ${questionInfo.questionText}',
+        );
+        return Container();
     }
 
     return Container(
@@ -1022,473 +1021,194 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     }
   }
 
-  /// Show results dialog with "View Map" button
   void _showParksResultDialog(
     int count,
     String matchedAddress,
     String answer,
     int layerId,
   ) {
-    showDialog(
+    showAutoFillResultDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 28.0),
-              SizedBox(width: 10.0),
-              Text('Parks Query Results'),
-            ],
-          ),
-          content: Container(
-            width: _screenWidth * 0.5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Address section
-                Text(
-                  'Geocoded Address:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: Text(matchedAddress, style: TextStyle(fontSize: 14.0)),
-                ),
-                SizedBox(height: 20.0),
-
-                // Parks count section
-                Text(
-                  'Parks Found:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.blue[300]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.park, color: Colors.green[700], size: 24.0),
-                      SizedBox(width: 10.0),
-                      Text(
-                        '$count park(s) within ½ mile radius',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.blue[900],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
-
-                // Auto-selected answer section
-                Text(
-                  'Auto-selected Answer:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.green[400]!, width: 2.0),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check, color: Colors.green[900], size: 24.0),
-                      SizedBox(width: 10.0),
-                      Text(
-                        answer,
-                        style: TextStyle(
-                          fontSize: 22.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[900],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
-
-                // Data source info with View Map button
-                Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.amber[300]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.amber[900],
-                            size: 20.0,
-                          ),
-                          SizedBox(width: 8.0),
-                          Expanded(
-                            child: Text(
-                              'Data from Clark County Recreation layer $layerId',
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.amber[900],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8.0),
-                      // View Map button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.map, size: 18.0),
-                          label: Text('View Interactive Map'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[700],
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 12.0),
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _showParksMap();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              ),
-              child: Text('OK', style: TextStyle(fontSize: 16.0)),
-            ),
-          ],
-        );
-      },
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Parks Query Results',
+        foundLabel: 'Parks Found:',
+        foundValueText: '$count park(s) within ½ mile radius',
+        foundIcon: Icons.park,
+        dataSourceText: 'Data from Clark County Recreation layer $layerId',
+        onViewMap: _showParksMap,
+      ),
     );
   }
 
-  /// Show bus stops results dialog with "View Map" button
   void _showBusStopsResultDialog(
     int count,
     String matchedAddress,
     String answer,
     int layerId,
   ) {
-    showDialog(
+    showAutoFillResultDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 28.0),
-              SizedBox(width: 10.0),
-              Text('Bus Stops Query Results'),
-            ],
-          ),
-          content: Container(
-            width: _screenWidth * 0.5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Address section
-                Text(
-                  'Geocoded Address:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: Text(matchedAddress, style: TextStyle(fontSize: 14.0)),
-                ),
-                SizedBox(height: 20.0),
-
-                // Bus stops count section
-                Text(
-                  'Bus Stops Found:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.orange[300]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.directions_bus,
-                        color: Colors.orange[700],
-                        size: 24.0,
-                      ),
-                      SizedBox(width: 10.0),
-                      Text(
-                        '$count bus stop(s) within ¼ mile radius',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.orange[900],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
-
-                // Auto-selected answer section
-                Text(
-                  'Auto-selected Answer:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.green[400]!, width: 2.0),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check, color: Colors.green[900], size: 24.0),
-                      SizedBox(width: 10.0),
-                      Text(
-                        answer,
-                        style: TextStyle(
-                          fontSize: 22.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[900],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
-
-                // Data source info with View Map button
-                Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.amber[300]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.amber[900],
-                            size: 20.0,
-                          ),
-                          SizedBox(width: 8.0),
-                          Expanded(
-                            child: Text(
-                              'Data from ArcGIS bus stops layer $layerId',
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.amber[900],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8.0),
-                      // View Map button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.map, size: 18.0),
-                          label: Text('View Interactive Map'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange[700],
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 12.0),
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _showBusStopsMap();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.orange[600],
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              ),
-              child: Text('OK', style: TextStyle(fontSize: 16.0)),
-            ),
-          ],
-        );
-      },
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Bus Stops Query Results',
+        foundLabel: 'Bus Stops Found:',
+        foundValueText: '$count bus stop(s) within ¼ mile radius',
+        foundIcon: Icons.directions_bus,
+        dataSourceText: 'Data from ArcGIS bus stops layer $layerId',
+        onViewMap: _showBusStopsMap,
+        // optional: make bus icon orange but keep everything else parks-blue
+        // foundIconColor: Colors.orange[700],
+      ),
     );
   }
 
   /// Show map in a dialog using Flutter widgets
   Future<void> _showParksMap() async {
-    if (_lastParksResult == null) {
-      _showErrorDialog('No parks data available to display map.');
-      return;
-    }
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: _lastParksResult,
+        noDataMessage: 'No parks data available to display map.',
+        loadingMessage: 'Loading map...',
 
-    try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Container(
-            padding: EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16.0),
-                Text('Loading map...'),
-              ],
-            ),
-          ),
-        ),
-      );
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => r.layerId,
 
-      // Get map data
-      final mapData = await ParksMapService.getMapData(
-        lon: _lastParksResult!.lon,
-        lat: _lastParksResult!.lat,
-        matchedAddress: _lastParksResult!.matchedAddress,
-        layerId: _lastParksResult!.layerId,
-      );
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) {
+              return ParksMapService.getMapData(
+                lon: lon,
+                lat: lat,
+                matchedAddress: matchedAddress,
+                layerId: layerId,
+              );
+            },
 
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show map widget
-      showDialog(
-        context: context,
-        builder: (context) => ParksMapWidget(
+        buildMapWidget: (mapData) => ParksMapWidget(
           lat: mapData.lat,
           lon: mapData.lon,
           matchedAddress: mapData.matchedAddress,
           parkFeatures: mapData.parkFeatures,
           layerId: mapData.layerId,
         ),
-      );
-    } catch (e) {
-      // Close loading dialog if still open
-      Navigator.of(context).pop();
-      _showErrorDialog('Error loading map: $e');
-    }
+
+        // Parks-dominant defaults already apply; theme can be omitted.
+      ),
+    );
   }
 
   /// Show bus stops map in a dialog using Flutter widgets
   Future<void> _showBusStopsMap() async {
-    if (_lastBusStopsResult == null) {
-      _showErrorDialog('No bus stops data available to display map.');
-      return;
-    }
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: _lastBusStopsResult,
+        noDataMessage: 'No bus stops data available to display map.',
+        loadingMessage: 'Loading map...', // parks-dominant wording
 
-    try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Container(
-            padding: EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16.0),
-                Text('Loading bus stops map...'),
-              ],
-            ),
-          ),
-        ),
-      );
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => r.layerId,
 
-      // Get map data
-      final mapData = await BusStopsMapService.getMapData(
-        lon: _lastBusStopsResult!.lon,
-        lat: _lastBusStopsResult!.lat,
-        matchedAddress: _lastBusStopsResult!.matchedAddress,
-        layerId: _lastBusStopsResult!.layerId,
-      );
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) {
+              return BusStopsMapService.getMapData(
+                lon: lon,
+                lat: lat,
+                matchedAddress: matchedAddress,
+                layerId: layerId,
+              );
+            },
 
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show map widget
-      showDialog(
-        context: context,
-        builder: (context) => BusStopsMapWidget(
+        buildMapWidget: (mapData) => BusStopsMapWidget(
           lat: mapData.lat,
           lon: mapData.lon,
           matchedAddress: mapData.matchedAddress,
           busStopFeatures: mapData.busStopFeatures,
           layerId: mapData.layerId,
         ),
-      );
-    } catch (e) {
-      // Close loading dialog if still open
-      Navigator.of(context).pop();
-      _showErrorDialog('Error loading bus stops map: $e');
-    }
+      ),
+    );
   }
+
+  // Future<void> _showBusStopsMap() async {
+  //   if (_lastBusStopsResult == null) {
+  //     _showErrorDialog('No bus stops data available to display map.');
+  //     return;
+  //   }
+
+  //   try {
+  //     // Show loading dialog
+  //     showDialog(
+  //       context: context,
+  //       barrierDismissible: false,
+  //       builder: (context) => Center(
+  //         child: Container(
+  //           padding: EdgeInsets.all(20.0),
+  //           decoration: BoxDecoration(
+  //             color: Colors.white,
+  //             borderRadius: BorderRadius.circular(8.0),
+  //           ),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               CircularProgressIndicator(),
+  //               SizedBox(height: 16.0),
+  //               Text('Loading bus stops map...'),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     );
+
+  //     // Get map data
+  //     final mapData = await BusStopsMapService.getMapData(
+  //       lon: _lastBusStopsResult!.lon,
+  //       lat: _lastBusStopsResult!.lat,
+  //       matchedAddress: _lastBusStopsResult!.matchedAddress,
+  //       layerId: _lastBusStopsResult!.layerId,
+  //     );
+
+  //     // Close loading dialog
+  //     Navigator.of(context).pop();
+
+  //     // Show map widget
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => BusStopsMapWidget(
+  //         lat: mapData.lat,
+  //         lon: mapData.lon,
+  //         matchedAddress: mapData.matchedAddress,
+  //         busStopFeatures: mapData.busStopFeatures,
+  //         layerId: mapData.layerId,
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     // Close loading dialog if still open
+  //     Navigator.of(context).pop();
+  //     _showErrorDialog('Error loading bus stops map: $e');
+  //   }
+  // }
 
   /// Show error dialog
   void _showErrorDialog(String message) {
@@ -1561,181 +1281,47 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     }
   }
 
-  /// Show ADI results dialog
   void _showAdiResultDialog(
     int adiValue,
     String matchedAddress,
     String blockGroup,
     String county,
   ) {
-    showDialog(
+    showAutoFillResultDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 28.0),
-              SizedBox(width: 10.0),
-              Text('ADI Query Results'),
-            ],
-          ),
-          content: Container(
-            width: _screenWidth * 0.5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Address section
-                Text(
-                  'Geocoded Address:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: Text(matchedAddress, style: TextStyle(fontSize: 14.0)),
-                ),
-                SizedBox(height: 20.0),
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: adiValue.toString(),
+      config: AutoFillDialogConfig(
+        titleText: 'ADI Query Results',
+        foundLabel: 'Area Deprivation Index (State Decile):',
+        foundValueText: 'ADI State Decile: $adiValue',
+        foundIcon: Icons.analytics,
+        dataSourceText: 'Data from U. of Wisconsin ADI Database',
 
-                // ADI Value section
-                Text(
-                  'Area Deprivation Index (State Decile):',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.blue[300]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.analytics,
-                        color: Colors.blue[700],
-                        size: 24.0,
-                      ),
-                      SizedBox(width: 10.0),
-                      Text(
-                        'ADI State Decile: $adiValue',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.blue[900],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
+        // No map button for ADI (onViewMap: null)
 
-                // Auto-selected answer section
-                Text(
-                  'Auto-selected Answer:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                ),
-                SizedBox(height: 5.0),
-                Container(
-                  padding: EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.green[400]!, width: 2.0),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check, color: Colors.green[900], size: 24.0),
-                      SizedBox(width: 10.0),
-                      Text(
-                        adiValue.toString(),
-                        style: TextStyle(
-                          fontSize: 22.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[900],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
-
-                // Data source info
-                Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(4.0),
-                    border: Border.all(color: Colors.amber[300]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.amber[900],
-                            size: 20.0,
-                          ),
-                          SizedBox(width: 8.0),
-                          Expanded(
-                            child: Text(
-                              'Data from U. of Wisconsin ADI Database',
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.amber[900],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (blockGroup != 'Unknown') ...[
-                        SizedBox(height: 5.0),
-                        Text(
-                          'Block Group: $blockGroup',
-                          style: TextStyle(
-                            fontSize: 11.0,
-                            color: Colors.amber[900],
-                          ),
-                        ),
-                      ],
-                      if (county != 'Unknown') ...[
-                        SizedBox(height: 3.0),
-                        Text(
-                          'County: $county',
-                          style: TextStyle(
-                            fontSize: 11.0,
-                            color: Colors.amber[900],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              ),
-              child: Text('OK', style: TextStyle(fontSize: 16.0)),
+        // Extra blockGroup/county lines inside the amber box
+        extraDataSourceWidgets: [
+          if (blockGroup != 'Unknown') ...[
+            const SizedBox(height: 5.0),
+            Text(
+              'Block Group: $blockGroup',
+              style: TextStyle(fontSize: 11.0, color: Colors.amber[900]),
             ),
           ],
-        );
-      },
+          if (county != 'Unknown') ...[
+            const SizedBox(height: 3.0),
+            Text(
+              'County: $county',
+              style: TextStyle(fontSize: 11.0, color: Colors.amber[900]),
+            ),
+          ],
+        ],
+
+        // Optional: make ADI icon blue but keep Parks theme elsewhere
+        foundIconColor: Colors.blue[700],
+      ),
     );
   }
 }

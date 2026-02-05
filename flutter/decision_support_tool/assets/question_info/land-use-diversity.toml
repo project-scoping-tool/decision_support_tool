@@ -15,6 +15,7 @@ answers = [
 answerLeadingHeader = 'Diversity:'
 domain = 'Land Use'
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Click on the link provided for the U.S. Environmental Protection Agency (EPA) Smart Location database, [available here](https://geodata.epa.gov/arcgis/rest/services/OA/SmartLocationDatabase/MapServer).
 * Under "View In," select "ArcGIS Online Map Viewer”

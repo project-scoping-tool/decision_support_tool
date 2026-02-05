@@ -17,6 +17,7 @@ answers = [
 answerLeadingHeader = 'MAPS Mini Score:'
 domain = ''
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Click the link provided for the MAPS Mini Survey, [available here](https://www.drjimsallis.com/maps).
 * Click the box on the left-hand side of the page that is labeled “MAPS Mini.”

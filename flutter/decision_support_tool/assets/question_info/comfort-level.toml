@@ -11,6 +11,7 @@ answers = [
 answerLeadingHeader = 'Comfort:'
 domain = ''
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Open the Existing Level of Comfort for bicycling map tool from the Regional Transportation Commission Regional Bicycle and Pedestrian Plan, available here.
 * Enter the project area's address in the search box at the top left of the map.

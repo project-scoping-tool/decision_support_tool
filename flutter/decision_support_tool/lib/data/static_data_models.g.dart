@@ -40,6 +40,7 @@ _QuestionInfo _$QuestionInfoFromJson(Map<String, dynamic> json) =>
       videoId: json['videoId'] as String,
       hint: json['hint'] as String,
       autoFillEnabled: json['autoFillEnabled'] as bool? ?? false,
+      buttonText: json['buttonText'] as String,
     );
 
 Map<String, dynamic> _$QuestionInfoToJson(_QuestionInfo instance) =>
@@ -54,6 +55,7 @@ Map<String, dynamic> _$QuestionInfoToJson(_QuestionInfo instance) =>
       'videoId': instance.videoId,
       'hint': instance.hint,
       'autoFillEnabled': instance.autoFillEnabled,
+      'buttonText': instance.buttonText,
     };
 
 _Answer _$AnswerFromJson(Map<String, dynamic> json) => _Answer(

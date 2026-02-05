@@ -10,6 +10,7 @@ answers = [
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = true
+buttonText = 'Parks'
 instructionsMarkdown = '''
 * Click on the Clark County Recreation data link, [available here](https://www.arcgis.com/home/webmap/viewer.html?useExisting=1&layers=7b483a11c0b3489d8ce7601081872f99).
 * In the search box above the map on the top right of the screen, enter the address for the project area

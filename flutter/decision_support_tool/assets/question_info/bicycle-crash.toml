@@ -11,6 +11,7 @@ answers = [
 answerLeadingHeader = 'Crashes:'
 domain = 'Crash'
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Click on the link for Nevada Bicycle Crash Data 2018-2021, [available here](https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=615504612df74a94b2a838cf5f619c20).
 * Enter an address within the project area into the search bar and click "Search."

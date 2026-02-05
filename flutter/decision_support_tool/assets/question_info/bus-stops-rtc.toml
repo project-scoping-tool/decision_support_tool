@@ -5,6 +5,7 @@ answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 2.0 }]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = true
+buttonText = 'Bus Stops'
 instructionsMarkdown = '''
 * Click on the RTC data link, [available here](https://www.arcgis.com/home/webmap/viewer.html?panel=gallery&layers=3a1fde0a9b9a49e98574e0c6322a088f).
 * In the search box above the map on the top right of the screen, enter the address for the project area

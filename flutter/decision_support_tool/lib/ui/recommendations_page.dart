@@ -1207,30 +1207,28 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
     ];
 
     try {
-      // Import the CreatePDF class
-      await CreatePDF.generatePDF(
-        evaluatorName: evaluator,
-        projectName: projectName,
-        date: date,
-        jurisdiction: _jurisdiction,
-        //step1Points: 0.0, // Get from ViewModel
-        //step2Points: 0.0, // Get from ViewModel
-        step1Answers: step1Answers,
-        step2Answers: step2Answers,
-        categories: categories,
-        radioValues: _radioValues,
-        justifications: justifications,
-        goodHighlight: _viewModel.isHighlightingGoodColumn,
-        betterHighlight: _viewModel.isHighlightingBetterColumn,
-        bestHighlight: _viewModel.isHighlightingBestColumn,
-      );
+      // // Import the CreatePDF class
+      // await CreatePDF.generatePDF(
+      //   evaluatorName: evaluator,
+      //   projectName: projectName,
+      //   date: date,
+      //   jurisdiction: _jurisdiction,
+      //   //step1Points: 0.0, // Get from ViewModel
+      //   //step2Points: 0.0, // Get from ViewModel
+      //   step1Answers: step1Answers,
+      //   step2Answers: step2Answers,
+      //   categories: categories,
+      //   radioValues: _radioValues,
+      //   justifications: justifications,
+      //   goodHighlight: _viewModel.isHighlightingGoodColumn,
+      //   betterHighlight: _viewModel.isHighlightingBetterColumn,
+      //   bestHighlight: _viewModel.isHighlightingBestColumn,
+      // );
 
       // For now, show a message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'PDF generation prepared. Uncomment code in _generatePDF() to enable.',
-          ),
+          content: Text('PDF will generate.'),
           duration: Duration(seconds: 3),
         ),
       );

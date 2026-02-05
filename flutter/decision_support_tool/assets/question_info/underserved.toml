@@ -17,6 +17,7 @@ answers = [
 answerLeadingHeader = 'ADI'
 domain = 'Equity'
 autoFillEnabled = true
+buttonText = 'ADI'
 instructionsMarkdown = '''
 * Click the link provided for the U. of Wisconsin Area Deprivation Index (ADI), [available here.](https://www.neighborhoodatlas.medicine.wisc.edu/mapping)
 * Select Nevada

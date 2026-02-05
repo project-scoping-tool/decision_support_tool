@@ -121,6 +121,9 @@ abstract class QuestionInfo with _$QuestionInfo {
     /// Whether the auto-fill button should be shown for this question.
     /// Defaults to false if not specified in the TOML file.
     @Default(false) bool autoFillEnabled,
+
+    /// Additional button text, used for additional notes.
+    required String buttonText,
   }) = _QuestionInfo;
 
   /// Creates an instance from a JSON mapping.

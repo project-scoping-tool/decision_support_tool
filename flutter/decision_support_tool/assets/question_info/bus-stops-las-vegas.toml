@@ -5,6 +5,7 @@ answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 2.0 }]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = false
+buttonText = ''
 instructionsMarkdown = '''
 * Click on the link for the City of Las Vegas Interactive Map, [available here](https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas).
 * Click “OK” on the opening disclaimer, if it appears.
