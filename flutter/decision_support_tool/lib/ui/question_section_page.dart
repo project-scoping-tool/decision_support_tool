@@ -17,6 +17,9 @@ import 'package:decision_support_tool/ui/autofill_map_dialog.dart';
 import 'package:decision_support_tool/services/bike_lanes_query_service.dart';
 import 'package:decision_support_tool/services/bike_lanes_map_service.dart';
 import 'package:decision_support_tool/ui/bike_lanes_map_widget.dart';
+import 'package:decision_support_tool/services/schools_query_service.dart';
+import 'package:decision_support_tool/services/schools_map_service.dart';
+import 'package:decision_support_tool/ui/schools_map_widget.dart';
 
 class QuestionSectionPage extends StatefulWidget {
   const QuestionSectionPage({
@@ -53,6 +56,9 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
   /// Store the last bike lines query result for map display
   BikeLanesQueryResult? _lastBikeLanesResult;
+
+  /// Store the last schools query result for map display
+  SchoolsQueryResult? _lastSchoolsResult;
 
   QuestionSectionViewModel get _viewModel => widget.viewModel;
   String get _jurisdiction => widget.viewModel.assessmentInfo.jurisdiction;
@@ -882,6 +888,12 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         onPressed = () => _fetchBikeLanesCount(questionIndex);
         break;
 
+      case 'Schools':
+        buttonText = 'Auto-fill from Schools Data';
+        buttonIcon = Icons.school;
+        onPressed = () => _fetchSchoolsCount(questionIndex);
+        break;
+
       default:
         debugPrint(
           'No auto-fill configuration for question: ${questionInfo.questionText}',
@@ -1122,6 +1134,47 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
+  /// Show schools map in a dialog using Flutter widgets
+  Future<void> _showSchoolsMap() async {
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: _lastSchoolsResult,
+        noDataMessage: 'No schools data available to display map.',
+        loadingMessage: 'Loading map...', // parks-dominant wording
+
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => r.layerId,
+
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) {
+              return SchoolsMapService.getMapData(
+                lon: lon,
+                lat: lat,
+                matchedAddress: matchedAddress,
+                layerId: layerId,
+              );
+            },
+
+        buildMapWidget: (mapData) => SchoolsMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          schoolFeatures: mapData.schoolFeatures,
+          layerId: mapData.layerId,
+        ),
+      ),
+    );
+  }
+
   Future<void> _showBikeLanesMap() async {
     await showAutoFillMapDialog(
       context: context,
@@ -1237,6 +1290,52 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
+  /// Fetch schools count using the Dart service
+  Future<void> _fetchSchoolsCount(int questionIndex) async {
+    try {
+      _viewModel.setFetchingParksData(true);
+
+      // Get the project address from the text controller
+      final address = _projectAddressController.text.trim();
+
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+
+      // Call the schools service
+      final result = await SchoolsQueryService.countSchoolsNearAddress(address);
+
+      // Store the result for map display
+      _lastSchoolsResult = result;
+
+      // Find the answer index that matches
+      final questionInfo = _questionInfos[questionIndex];
+      int answerIndex = questionInfo.answers.indexWhere(
+        (a) => a.text == result.answer,
+      );
+
+      if (answerIndex != -1) {
+        // Auto-select the answer
+        _viewModel.selectAnswer(questionIndex, answerIndex);
+
+        // Show success dialog with results
+        _showSchoolsResultDialog(
+          result.count,
+          result.matchedAddress,
+          result.answer,
+          result.layerId,
+        );
+      } else {
+        _showErrorDialog('Could not match answer: ${result.answer}');
+      }
+    } catch (e) {
+      _showErrorDialog('Error fetching schools data: $e');
+    } finally {
+      _viewModel.setFetchingParksData(false);
+    }
+  }
+
   /// Fetch bike lanes and shared use paths count using the Dart service
   Future<void> _fetchBikeLanesCount(int questionIndex) async {
     try {
@@ -1327,6 +1426,30 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     } finally {
       _viewModel.setFetchingParksData(false);
     }
+  }
+
+  void _showSchoolsResultDialog(
+    int count,
+    String matchedAddress,
+    String answer,
+    int layerId,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Schools Query Results',
+        foundLabel: 'Schools Found:',
+        foundValueText: '$count school(s) within ½ mile radius',
+        foundIcon: Icons.school,
+        dataSourceText: 'Data from Clark County Education layer $layerId',
+        onViewMap: _showSchoolsMap,
+        // Optional: customize icon color to purple for schools
+        foundIconColor: Colors.purple[700],
+      ),
+    );
   }
 
   void _showBikeLanesResultDialog(
