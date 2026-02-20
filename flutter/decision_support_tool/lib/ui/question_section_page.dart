@@ -749,62 +749,58 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Previous page button
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: EdgeInsets.only(left: _screenWidth * 0.94 * 0.04),
-                child: InkWell(
-                  onTap: () {
-                    _viewModel.goToPreviousPage();
-                  },
-                  child: Container(
-                    width: _screenWidth * 0.94 * 0.08,
-                    height: _screenHeight * 0.05,
-                    color: Colors.deepPurple[200],
-                    alignment: Alignment.center,
-                    child: Text(
-                      widget.previousPageButtonText,
-                      style: TextStyle(fontSize: fontSize),
-                    ),
+            Padding(
+              padding: EdgeInsets.only(left: _screenWidth * 0.94 * 0.04),
+              child: InkWell(
+                onTap: () {
+                  _viewModel.goToPreviousPage();
+                },
+                child: Container(
+                  height: _screenHeight * 0.05,
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  color: Colors.deepPurple[200],
+                  alignment: Alignment.center,
+                  child: Text(
+                    widget.previousPageButtonText,
+                    style: TextStyle(fontSize: fontSize),
+                    softWrap: false,
                   ),
                 ),
               ),
             ),
             // Next page button
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                padding: EdgeInsets.only(right: _screenWidth * 0.94 * 0.04),
-                child: ListenableBuilder(
-                  listenable: _viewModel.anyAnswerChanged,
-                  builder: (_, _) {
-                    final isAllQuestionsAnswered =
-                        _viewModel.isAllQuestionsAnswered;
-                    return InkWell(
-                      onTap: (isAllQuestionsAnswered)
-                          ? () {
-                              if (!_viewModel.isLastQuestionSection) {
-                                _viewModel.goToNextPage();
-                              } else {
-                                _showCustomDialog();
-                              }
+            Padding(
+              padding: EdgeInsets.only(right: _screenWidth * 0.94 * 0.04),
+              child: ListenableBuilder(
+                listenable: _viewModel.anyAnswerChanged,
+                builder: (_, _) {
+                  final isAllQuestionsAnswered =
+                      _viewModel.isAllQuestionsAnswered;
+                  return InkWell(
+                    onTap: (isAllQuestionsAnswered)
+                        ? () {
+                            if (!_viewModel.isLastQuestionSection) {
+                              _viewModel.goToNextPage();
+                            } else {
+                              _showCustomDialog();
                             }
-                          : null,
-                      child: Container(
-                        width: _screenWidth * 0.94 * 0.08,
-                        height: _screenHeight * 0.05,
-                        color: (isAllQuestionsAnswered)
-                            ? const Color.fromARGB(255, 147, 88, 255)
-                            : const Color.fromARGB(255, 228, 222, 240),
-                        alignment: Alignment.center,
-                        child: Text(
-                          widget.nextPageButtonText,
-                          style: TextStyle(fontSize: fontSize),
-                        ),
+                          }
+                        : null,
+                    child: Container(
+                      height: _screenHeight * 0.05,
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      color: (isAllQuestionsAnswered)
+                          ? const Color.fromARGB(255, 147, 88, 255)
+                          : const Color.fromARGB(255, 228, 222, 240),
+                      alignment: Alignment.center,
+                      child: Text(
+                        widget.nextPageButtonText,
+                        style: TextStyle(fontSize: fontSize),
+                        softWrap: false,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ],

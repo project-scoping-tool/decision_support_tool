@@ -84,18 +84,23 @@ class _SelectJurisdictionPageState extends State<SelectJurisdictionPage> {
     return InkWell(
       enableFeedback: false,
       onTap: onTap,
-      child: Container(
-        width: _screenWidth * 0.0752,
-        height: _screenHeight * 0.047,
-        color: (enabled)
-            ? const Color.fromARGB(255, 147, 88, 255)
-            : const Color.fromARGB(255, 205, 192, 229),
-        alignment: Alignment.center,
-        child: Text(
-          'Go To Step 1',
-          style: TextStyle(
-            fontSize: _nextButtonFontSize,
-            color: (enabled) ? null : const Color.fromARGB(255, 103, 103, 103),
+      child: IntrinsicWidth(
+        child: Container(
+          height: _screenHeight * 0.047,
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          color: (enabled)
+              ? const Color.fromARGB(255, 147, 88, 255)
+              : const Color.fromARGB(255, 205, 192, 229),
+          alignment: Alignment.center,
+          child: Text(
+            'Go To Step 1',
+            style: TextStyle(
+              fontSize: _nextButtonFontSize,
+              color: (enabled)
+                  ? null
+                  : const Color.fromARGB(255, 103, 103, 103),
+            ),
+            softWrap: false,
           ),
         ),
       ),
@@ -103,8 +108,11 @@ class _SelectJurisdictionPageState extends State<SelectJurisdictionPage> {
   }
 
   Widget _buildWidgetRadioButtonContainer(int index, String jurisdiction) {
-    return Container(
-      width: _screenWidth * 0.2,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: _screenWidth * 0.15,
+        maxWidth: _screenWidth * 0.4,
+      ),
       child: RadioListTile<int>(title: Text(jurisdiction), value: index),
     );
   }

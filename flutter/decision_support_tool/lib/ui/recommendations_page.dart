@@ -965,43 +965,46 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Go To Step 2 button
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            padding: EdgeInsets.only(left: width * 0.04),
-            child: InkWell(
-              onTap: () {
-                // Go back to Step 2
-                _viewModel.goToPreviousPage();
-              },
+        Padding(
+          padding: EdgeInsets.only(left: width * 0.04),
+          child: InkWell(
+            onTap: () {
+              // Go back to Step 2
+              _viewModel.goToPreviousPage();
+            },
+            child: IntrinsicWidth(
               child: Container(
-                width: width * 0.08,
                 height: height * 0.05,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 color: Colors.deepPurple[200],
                 alignment: Alignment.center,
                 child: Text(
                   'Go To Step 2',
                   style: TextStyle(fontSize: fontSize),
+                  softWrap: false,
                 ),
               ),
             ),
           ),
         ),
         // Print PDF button
-        Align(
-          alignment: Alignment.centerRight,
-          child: Container(
-            padding: EdgeInsets.only(right: width * 0.04),
-            child: InkWell(
-              onTap: () {
-                _showPrintDialog();
-              },
+        Padding(
+          padding: EdgeInsets.only(right: width * 0.04),
+          child: InkWell(
+            onTap: () {
+              _showPrintDialog();
+            },
+            child: IntrinsicWidth(
               child: Container(
                 alignment: Alignment.center,
                 color: Colors.red,
-                width: width * 0.07,
                 height: height * 0.05,
-                child: Text('Print PDF', style: TextStyle(fontSize: fontSize)),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  'Print PDF',
+                  style: TextStyle(fontSize: fontSize),
+                  softWrap: false,
+                ),
               ),
             ),
           ),
