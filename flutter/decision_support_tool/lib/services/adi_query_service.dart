@@ -24,74 +24,109 @@ class AdiQueryService {
   // Nevada bounding box for geocoding
   static const String _nevadaSearchExtent =
       '-120.000808868339,34.9911168284889,-114.040269700533,42.001108550977';
-  
+
   // Cache for ADI data (loaded once per session)
   static List<Map<String, dynamic>>? _cachedAdiFeatures;
 
-  /// Main method to get ADI value for an address
+  /// Lookup ADI value for an address string (geocodes internally).
   static Future<AdiQueryResult> getAdiForAddress(String address) async {
-    print('=== ADI Query Starting ===');
-    
-    try {
-      // 1. Geocode the address
-      print('Step 1: Geocoding address...');
-      final geocodeResult = await _geocodeAddress(address);
-      final lon = geocodeResult['lon'] as double;
-      final lat = geocodeResult['lat'] as double;
-      final matched = geocodeResult['matched'] as String;
-      print('✓ Geocoded: $matched at ($lon, $lat)');
+    final geocodeResult = await _geocodeAddress(address);
+    final lon = geocodeResult['lon'] as double;
+    final lat = geocodeResult['lat'] as double;
+    final matched = geocodeResult['matched'] as String;
+    return getAdiForCoordinates(lon, lat, matched);
+  }
 
+  /// Lookup ADI value using pre-resolved coordinates (skips geocoding).
+  /// [matchedAddress] is the address string to include in the result.
+  static Future<AdiQueryResult> getAdiForCoordinates(
+    double lon,
+    double lat,
+    String matchedAddress,
+  ) async {
+    print('=== ADI Query (coordinates) ===');
+    try {
       // 2. Load Nevada ADI data from local asset
       print('Step 2: Loading ADI data from local asset...');
       final geoJsonFeatures = await _loadAdiDataFromAsset();
-      print('✓ Loaded ${geoJsonFeatures.length} ADI features');
+      print('âœ“ Loaded ${geoJsonFeatures.length} ADI features');
 
-      // 3. Find which polygon contains our point
-      print('Step 3: Finding containing polygon...');
-      final matchedFeature = _findContainingPolygon(lon, lat, geoJsonFeatures);
-      
-      if (matchedFeature == null) {
-        print('No polygon found for point ($lon, $lat)');
+      // 3 & 4. Iterate polygons, find the one containing our point, skip
+      //         suppressed/non-numeric ADI codes (e.g. "GQ-PH").
+      print('Step 3: Finding containing polygon with valid ADI...');
+      AdiQueryResult? result;
+      for (final feature in geoJsonFeatures) {
+        final geometry = feature['geometry'] as Map<String, dynamic>?;
+        if (geometry == null) continue;
+
+        final type = geometry['type'] as String?;
+        final coordinates = geometry['coordinates'];
+
+        bool isInside = false;
+        if (type == 'Polygon') {
+          isInside = _isPointInPolygon(lon, lat, coordinates as List);
+        } else if (type == 'MultiPolygon') {
+          for (final polygon in (coordinates as List)) {
+            if (_isPointInPolygon(lon, lat, polygon as List)) {
+              isInside = true;
+              break;
+            }
+          }
+        }
+        if (!isInside) continue;
+
+        final properties = feature['properties'] as Map<String, dynamic>;
+        final adiValueStr = properties['value_state'] as String?;
+        final blockGroupId = properties['id'] as String?;
+        final countyName = properties['county'] as String?;
+
+        if (adiValueStr == null || adiValueStr.isEmpty) {
+          print('  Skipping ${blockGroupId ?? "?"}: empty value_state');
+          continue;
+        }
+
+        // int.tryParse returns null for suppressed codes like "GQ-PH", "PH", etc.
+        final adiValue = int.tryParse(adiValueStr);
+        if (adiValue == null) {
+          print(
+            '  Skipping ${blockGroupId ?? "?"}: suppressed code "$adiValueStr"',
+          );
+          continue;
+        }
+
+        if (adiValue < 1 || adiValue > 10) {
+          print(
+            '  Skipping ${blockGroupId ?? "?"}: ADI out of range ($adiValue)',
+          );
+          continue;
+        }
+
+        print('Matched ADI: $adiValue for block group: $blockGroupId');
+        result = AdiQueryResult(
+          adiValue: adiValue,
+          matchedAddress: matchedAddress,
+          lon: lon,
+          lat: lat,
+          blockGroup: blockGroupId ?? 'Unknown',
+          county: countyName ?? 'Nevada',
+        );
+        break;
+      }
+
+      if (result == null) {
         throw Exception(
-          'Location not found in ADI database.\n\n'
-          'The address may be:\n'
-          '• In a commercial/industrial area\n'
-          '• A very new development\n'
-          '• Outside residential zones\n\n'
-          'Coordinates: $lat, $lon\n\n'
-          'Please manually verify at:\n'
+          'This address falls in a block group with a suppressed ADI score.\n\n'
+          'This typically occurs in group-quarters areas such as:\n'
+          '  • University housing / dormitories\n'
+          '  • Military bases\n'
+          '  • Correctional facilities\n\n'
+          'Please verify the ADI manually at:\n'
           'https://www.neighborhoodatlas.medicine.wisc.edu/mapping',
         );
       }
 
-      // 4. Extract ADI data
-      print('Step 4: Extracting ADI data...');
-      final properties = matchedFeature['properties'] as Map<String, dynamic>;
-      final adiValueStr = properties['value_state'] as String?;
-      final blockGroupId = properties['id'] as String?;
-      final countyName = properties['county'] as String?;
-
-      if (adiValueStr == null || adiValueStr.isEmpty) {
-        throw Exception('No ADI value in matched polygon');
-      }
-
-      final adiValue = int.parse(adiValueStr);
-      
-      if (adiValue < 1 || adiValue > 10) {
-        throw Exception('ADI value out of range: $adiValue');
-      }
-
-      print('✓ Found ADI: $adiValue for block group: $blockGroupId');
       print('=== ADI Query Complete ===');
-
-      return AdiQueryResult(
-        adiValue: adiValue,
-        matchedAddress: matched,
-        lon: lon,
-        lat: lat,
-        blockGroup: blockGroupId ?? 'Unknown',
-        county: countyName ?? 'Nevada',
-      );
+      return result;
     } catch (e) {
       print('ADI Query Failed: $e');
       rethrow;
@@ -107,22 +142,22 @@ class AdiQueryService {
     }
 
     print('  Loading from assets/data/nevada_adi_data.json...');
-    
+
     try {
       // Load from assets
       final jsonString = await rootBundle.loadString(
         'assets/data/nevada_adi_data.json',
       );
-      
+
       print('  Loaded ${jsonString.length} characters');
-      
+
       // Parse JSON
       var data = jsonDecode(jsonString);
-      
+
       print('  JSON type: ${data.runtimeType}');
-      
+
       List<Map<String, dynamic>> features;
-      
+
       // Handle different JSON structures
       if (data is Map<String, dynamic>) {
         // Check if data is wrapped in a "data" key
@@ -130,17 +165,16 @@ class AdiQueryService {
           print('  Found data wrapper, unwrapping...');
           data = data['data'] as Map<String, dynamic>;
         }
-        
+
         // Now check for FeatureCollection or features array
-        if (data['type'] == 'FeatureCollection' && data.containsKey('features')) {
+        if (data['type'] == 'FeatureCollection' &&
+            data.containsKey('features')) {
           print('  Found FeatureCollection with features array');
           features = (data['features'] as List).cast<Map<String, dynamic>>();
-        } 
-        else if (data.containsKey('features')) {
+        } else if (data.containsKey('features')) {
           print('  Found features array');
           features = (data['features'] as List).cast<Map<String, dynamic>>();
-        }
-        else {
+        } else {
           print('  Available keys: ${data.keys.toList()}');
           throw Exception('No features array found in JSON after unwrapping');
         }
@@ -156,15 +190,15 @@ class AdiQueryService {
       }
 
       print('  Parsed ${features.length} features');
-      
+
       // Validate first feature
       if (features.isNotEmpty) {
         final first = features[0];
         if (first.containsKey('geometry') && first.containsKey('properties')) {
           final props = first['properties'] as Map<String, dynamic>?;
-          print('  ✓ Valid GeoJSON features with geometry and properties');
+          print('  âœ“ Valid GeoJSON features with geometry and properties');
           if (props != null && props.containsKey('value_state')) {
-            print('  ✓ Features have ADI data (value_state)');
+            print('  âœ“ Features have ADI data (value_state)');
           }
         } else {
           print('  Warning: Features may not have proper GeoJSON structure');
@@ -174,10 +208,11 @@ class AdiQueryService {
       // Cache for future use
       _cachedAdiFeatures = features;
       return features;
-      
     } catch (e, stackTrace) {
       print('  Error loading asset: $e');
-      print('  Stack trace: ${stackTrace.toString().split('\n').take(3).join('\n')}');
+      print(
+        '  Stack trace: ${stackTrace.toString().split('\n').take(3).join('\n')}',
+      );
       throw Exception(
         'Failed to load ADI data from asset.\n\n'
         'Error: $e',
@@ -212,14 +247,14 @@ class AdiQueryService {
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final candidates = data['candidates'] as List?;
-    
+
     if (candidates == null || candidates.isEmpty) {
       throw Exception('No geocoding results for: $address');
     }
 
     final best = candidates[0] as Map<String, dynamic>;
     final location = best['location'] as Map<String, dynamic>?;
-    
+
     if (location == null) {
       throw Exception('No location in geocoding result');
     }
@@ -238,42 +273,6 @@ class AdiQueryService {
       'lat': (lat as num).toDouble(),
       'matched': matchedAddress,
     };
-  }
-
-  /// Find which polygon contains the point
-  static Map<String, dynamic>? _findContainingPolygon(
-    double lon,
-    double lat,
-    List<Map<String, dynamic>> features,
-  ) {
-    for (final feature in features) {
-      final geometry = feature['geometry'] as Map<String, dynamic>?;
-      if (geometry == null) continue;
-
-      final type = geometry['type'] as String?;
-      final coordinates = geometry['coordinates'];
-
-      bool isInside = false;
-
-      if (type == 'Polygon') {
-        isInside = _isPointInPolygon(lon, lat, coordinates as List);
-      } else if (type == 'MultiPolygon') {
-        for (final polygon in (coordinates as List)) {
-          if (_isPointInPolygon(lon, lat, polygon as List)) {
-            isInside = true;
-            break;
-          }
-        }
-      }
-
-      if (isInside) {
-        final props = feature['properties'] as Map<String, dynamic>?;
-        print('  Found match: ${props?['id']} (ADI: ${props?['value_state']})');
-        return feature;
-      }
-    }
-
-    return null;
   }
 
   /// Ray casting algorithm for point-in-polygon test

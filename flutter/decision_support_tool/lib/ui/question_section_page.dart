@@ -20,6 +20,72 @@ import 'package:decision_support_tool/ui/bike_lanes_map_widget.dart';
 import 'package:decision_support_tool/services/schools_query_service.dart';
 import 'package:decision_support_tool/services/schools_map_service.dart';
 import 'package:decision_support_tool/ui/schools_map_widget.dart';
+import 'package:decision_support_tool/services/bicycle_crash_drawing_service.dart';
+import 'package:decision_support_tool/ui/bicycle_crash_drawing_widget.dart';
+import 'package:decision_support_tool/ui/bicycle_crash_map_widget.dart';
+import 'package:decision_support_tool/services/pedestrian_crash_drawing_service.dart';
+import 'package:decision_support_tool/ui/pedestrian_crash_drawing_widget.dart';
+import 'package:decision_support_tool/ui/pedestrian_crash_map_widget.dart';
+import 'package:decision_support_tool/services/biking_rate_drawing_service.dart';
+import 'package:decision_support_tool/ui/biking_rate_drawing_widget.dart';
+import 'package:decision_support_tool/ui/biking_rate_map_widget.dart';
+import 'package:decision_support_tool/services/walking_rate_drawing_service.dart';
+import 'package:decision_support_tool/ui/walking_rate_drawing_widget.dart';
+import 'package:decision_support_tool/ui/walking_rate_map_widget.dart';
+import 'package:decision_support_tool/services/land_use_diversity_drawing_service.dart';
+import 'package:decision_support_tool/ui/land_use_diversity_drawing_widget.dart';
+import 'package:decision_support_tool/ui/land_use_diversity_map_widget.dart';
+import 'package:decision_support_tool/services/activity_density_drawing_service.dart';
+import 'package:decision_support_tool/ui/activity_density_drawing_widget.dart';
+import 'package:decision_support_tool/ui/activity_density_map_widget.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+// Helper class for bicycle crash map data (matches BicycleCrashMapWidget expectations)
+class BicycleCrashMapData {
+  final double lon;
+  final double lat;
+  final String matchedAddress;
+  final List<Map<String, dynamic>> crashFeatures;
+  final int crashCount;
+  final double density;
+  final double areaSqMiles;
+  final List<List<double>>? drawnPolyline; // NEW: Store drawn polyline
+
+  BicycleCrashMapData({
+    required this.lon,
+    required this.lat,
+    required this.matchedAddress,
+    required this.crashFeatures,
+    required this.crashCount,
+    required this.density,
+    required this.areaSqMiles,
+    this.drawnPolyline, // NEW: Optional drawn polyline
+  });
+}
+
+// Helper class for pedestrian crash map data (matches PedestrianCrashMapWidget expectations)
+class PedestrianCrashMapData {
+  final double lon;
+  final double lat;
+  final String matchedAddress;
+  final List<Map<String, dynamic>> crashFeatures;
+  final int crashCount;
+  final double density;
+  final double areaSqMiles;
+  final List<List<double>>? drawnPolyline;
+
+  PedestrianCrashMapData({
+    required this.lon,
+    required this.lat,
+    required this.matchedAddress,
+    required this.crashFeatures,
+    required this.crashCount,
+    required this.density,
+    required this.areaSqMiles,
+    this.drawnPolyline,
+  });
+}
 
 class QuestionSectionPage extends StatefulWidget {
   const QuestionSectionPage({
@@ -59,6 +125,24 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
   /// Store the last schools query result for map display
   SchoolsQueryResult? _lastSchoolsResult;
+
+  /// NEW: Store the last bicycle crash drawing result for map display
+  BicycleCrashDrawingResult? _lastBicycleCrashResult;
+
+  /// Store the last pedestrian crash drawing result for map display
+  PedestrianCrashDrawingResult? _lastPedestrianCrashResult;
+
+  /// Store the last biking rate drawing result for map display
+  BikingRateDrawingResult? _lastBikingRateResult;
+
+  /// Store the last walking rate drawing result for map display
+  WalkingRateDrawingResult? _lastWalkingRateResult;
+
+  /// Store the last land use diversity drawing result for map display
+  LandUseDiversityDrawingResult? _lastLandUseDiversityResult;
+
+  /// Store the last House per acre drawing result for map display
+  ActivityDensityDrawingResult? _lastActivityDensityResult;
 
   QuestionSectionViewModel get _viewModel => widget.viewModel;
   String get _jurisdiction => widget.viewModel.assessmentInfo.jurisdiction;
@@ -113,7 +197,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       child: Column(
         children: [
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
-          _buildProjectAddressInput(),
+          _buildProjectAddressInput(), //
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.02)),
           _buildWidgetTableHeader(),
           _buildWidgetTableCells(),
@@ -178,7 +262,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
               ),
               SizedBox(height: 8.0),
               Text(
-                'This address will be used for location-based queries (e.g., parks within ½ mile)',
+                'This address will be used for location-based queries (e.g., parks within Â½ mile)',
                 style: TextStyle(
                   fontSize: 12.0,
                   color: Colors.grey[600],
@@ -372,8 +456,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
 
           // AUTO-FILL BUTTON
-          _buildWidgetAutoFillButton(questionIndex),
-
+          _buildWidgetAutoFillButton(questionIndex), //
           // Space
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
           // Row for answers
@@ -864,35 +947,72 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     VoidCallback onPressed;
 
     switch (questionInfo.buttonText) {
-      case 'Parks':
+      case 'Parks': // S1-Q9
         buttonText = 'Auto-fill from Park Data';
         buttonIcon = Icons.map;
         onPressed = () => _fetchParksCount(questionIndex);
         break;
 
-      case 'Bus Stops':
+      case 'Bus Stops': // S1-Q10
         buttonText = 'Auto-fill from Bus Stop Data';
         buttonIcon = Icons.directions_bus;
         onPressed = () => _fetchBusStopsCount(questionIndex);
         break;
 
-      case 'ADI':
+      case 'ADI': // S1-Q1
         buttonText = 'Auto-fill from ADI Database';
         buttonIcon = Icons.analytics;
         onPressed = () => _fetchAdiValue(questionIndex);
         break;
 
-      case 'Bike Lanes':
-        buttonText = 'Auto-fill from Bike Lane Data';
-        buttonIcon = Icons.directions_bike;
-        onPressed = () => _fetchBikeLanesCount(questionIndex);
+      // case 'Bike Lanes': // S1-Q11
+      //   buttonText = 'Auto-fill from Bike Lane Data';
+      //   buttonIcon = Icons.directions_bike;
+      //   onPressed = () => _fetchBikeLanesCount(questionIndex);
+      //   break;
+
+      // case 'Schools': // S1-Q8
+      //   buttonText = 'Auto-fill from Schools Data';
+      //   buttonIcon = Icons.school;
+      //   onPressed = () => _fetchSchoolsCount(questionIndex);
+      //   break;
+
+      // case 'Bicycle Crash': // S1-Q5
+      //   buttonText = 'Draw Area & Calculate Crashes';
+      //   buttonIcon = Icons.draw;
+      //   onPressed = () => _openBicycleCrashDrawing(questionIndex);
+      //   break;
+
+      // case 'Pedestrian Crash': // S1-Q4
+      //   buttonText = 'Draw Area & Calculate Crashes';
+      //   buttonIcon = Icons.draw;
+      //   onPressed = () => _openPedestrianCrashDrawing(questionIndex);
+      //   break;
+
+      case 'Biking Rate': // S1-Q2
+        buttonText = 'Draw Area & Calculate Biking Rate';
+        buttonIcon = Icons.pedal_bike;
+        onPressed = () => _openBikingRateDrawing(questionIndex);
         break;
 
-      case 'Schools':
-        buttonText = 'Auto-fill from Schools Data';
-        buttonIcon = Icons.school;
-        onPressed = () => _fetchSchoolsCount(questionIndex);
-        break;
+      // case 'Walking Rate': // S1-Q3
+      //   buttonText = 'Draw Area & Calculate Walking Rate';
+      //   buttonIcon = Icons.directions_walk;
+      //   onPressed = () => _openWalkingRateDrawing(questionIndex);
+      //   break;
+
+      // case 'Land Use Diversity': // S1-Q6
+      //   buttonText = 'Draw Area & Calculate Diversity Index';
+      //   buttonIcon = Icons.landscape;
+      //   onPressed = () => _openLandUseDiversityDrawing(questionIndex);
+      //   break;
+
+      // case 'Activity Density (HU+Jobs/Acre)': // S1-Q7
+      //   // Matches the buttonText in hu-jpa.toml
+      //   buttonText = 'Draw Area & Calculate Activity Density';
+      //   buttonIcon = Icons.apartment;
+      //   onPressed = () => _openActivityDensityDrawing(questionIndex);
+      //   break;
 
       default:
         debugPrint(
@@ -960,7 +1080,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       final address = _projectAddressController.text.trim();
 
       if (address.isEmpty) {
-        _showErrorDialog('Please enter a project address first.');
+        _showWarningDialog('Please enter a project address first.');
         return;
       }
 
@@ -1006,7 +1126,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       final address = _projectAddressController.text.trim();
 
       if (address.isEmpty) {
-        _showErrorDialog('Please enter a project address first.');
+        _showWarningDialog('Please enter a project address first.');
         return;
       }
 
@@ -1059,7 +1179,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       config: AutoFillDialogConfig(
         titleText: 'Parks Query Results',
         foundLabel: 'Parks Found:',
-        foundValueText: '$count park(s) within ½ mile radius',
+        foundValueText: '$count park(s) within Â½ mile radius',
         foundIcon: Icons.park,
         dataSourceText: 'Data from Clark County Recreation layer $layerId',
         onViewMap: _showParksMap,
@@ -1081,12 +1201,10 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       config: AutoFillDialogConfig(
         titleText: 'Bus Stops Query Results',
         foundLabel: 'Bus Stops Found:',
-        foundValueText: '$count bus stop(s) within ¼ mile radius',
+        foundValueText: '$count bus stop(s) within Â¼ mile radius',
         foundIcon: Icons.directions_bus,
         dataSourceText: 'Data from ArcGIS bus stops layer $layerId',
         onViewMap: _showBusStopsMap,
-        // optional: make bus icon orange but keep everything else parks-blue
-        // foundIconColor: Colors.orange[700],
       ),
     );
   }
@@ -1128,8 +1246,6 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           parkFeatures: mapData.parkFeatures,
           layerId: mapData.layerId,
         ),
-
-        // Parks-dominant defaults already apply; theme can be omitted.
       ),
     );
   }
@@ -1142,7 +1258,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       config: AutoFillMapDialogConfig(
         lastResult: _lastSchoolsResult,
         noDataMessage: 'No schools data available to display map.',
-        loadingMessage: 'Loading map...', // parks-dominant wording
+        loadingMessage: 'Loading map...',
 
         getLon: (r) => r.lon,
         getLat: (r) => r.lat,
@@ -1187,17 +1303,15 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         getLon: (r) => r.lon,
         getLat: (r) => r.lat,
         getMatchedAddress: (r) => r.matchedAddress,
-        getLayerId: (r) =>
-            r.bikeLaneLayerId, // Use bike lane layer ID as primary
+        getLayerId: (r) => r.bikeLaneLayerId,
 
         fetchMapData:
             ({
               required double lon,
               required double lat,
               required String matchedAddress,
-              required int layerId, // This will be bikeLaneLayerId
+              required int layerId,
             }) async {
-              // We need both layer IDs, so get them from the result
               return BikeLanesMapService.getMapData(
                 lon: lon,
                 lat: lat,
@@ -1229,7 +1343,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       config: AutoFillMapDialogConfig(
         lastResult: _lastBusStopsResult,
         noDataMessage: 'No bus stops data available to display map.',
-        loadingMessage: 'Loading map...', // parks-dominant wording
+        loadingMessage: 'Loading map...',
 
         getLon: (r) => r.lon,
         getLat: (r) => r.lat,
@@ -1259,6 +1373,38 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           layerId: mapData.layerId,
         ),
       ),
+    );
+  }
+
+  /// Show warning dialog
+  void _showWarningDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28.0,
+              ),
+              SizedBox(width: 10.0),
+              Text('Warning'),
+            ],
+          ),
+          content: Container(
+            constraints: BoxConstraints(maxWidth: _screenWidth * 0.4),
+            child: Text(message, style: TextStyle(fontSize: 14.0)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK', style: TextStyle(fontSize: 16.0)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1388,18 +1534,23 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
   /// Fetch ADI value using the Dart service
   Future<void> _fetchAdiValue(int questionIndex) async {
     try {
-      _viewModel.setFetchingParksData(true);
-
-      // Get the project address from the text controller
       final address = _projectAddressController.text.trim();
 
       if (address.isEmpty) {
-        _showErrorDialog('Please enter a project address first.');
+        _showWarningDialog('Please enter a project address first.');
         return;
       }
 
-      // Call the ADI service
-      final result = await AdiQueryService.getAdiForAddress(address);
+      _viewModel.setFetchingParksData(true);
+      final (:lon, :lat) = await _geocodeAddress(address);
+      _viewModel.setFetchingParksData(false);
+
+      // Call the ADI service with pre-resolved coordinates
+      final result = await AdiQueryService.getAdiForCoordinates(
+        lon,
+        lat,
+        address,
+      );
 
       // Find the answer index that matches the ADI value
       final questionInfo = _questionInfos[questionIndex];
@@ -1442,11 +1593,10 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       config: AutoFillDialogConfig(
         titleText: 'Schools Query Results',
         foundLabel: 'Schools Found:',
-        foundValueText: '$count school(s) within ½ mile radius',
+        foundValueText: '$count school(s) within Â½ mile radius',
         foundIcon: Icons.school,
         dataSourceText: 'Data from Clark County Education layer $layerId',
         onViewMap: _showSchoolsMap,
-        // Optional: customize icon color to purple for schools
         foundIconColor: Colors.purple[700],
       ),
     );
@@ -1467,12 +1617,11 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       config: AutoFillDialogConfig(
         titleText: 'Bike Lanes & Shared Use Paths Query Results',
         foundLabel: 'Bike Infrastructure Found:',
-        foundValueText: '$count feature(s) within ¼ mile radius',
+        foundValueText: '$count feature(s) within Â¼ mile radius',
         foundIcon: Icons.directions_bike,
         dataSourceText:
             'Data from RTC (Regional Transportation Commission) layers',
         onViewMap: _showBikeLanesMap,
-        // Use bike-themed colors
         foundIconColor: Colors.blue[700],
         foundBoxBg: Colors.blue[50],
         foundBoxBorder: Colors.blue[300],
@@ -1497,10 +1646,6 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         foundValueText: 'ADI State Decile: $adiValue',
         foundIcon: Icons.analytics,
         dataSourceText: 'Data from U. of Wisconsin ADI Database',
-
-        // No map button for ADI (onViewMap: null)
-
-        // Extra blockGroup/county lines inside the amber box
         extraDataSourceWidgets: [
           if (blockGroup != 'Unknown') ...[
             const SizedBox(height: 5.0),
@@ -1517,9 +1662,875 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
             ),
           ],
         ],
-
-        // Optional: make ADI icon blue but keep Parks theme elsewhere
         foundIconColor: Colors.blue[700],
+      ),
+    );
+  }
+
+  /// Geocodes a plain-text address via ArcGIS and returns (lon, lat).
+  /// Throws an [Exception] if the address cannot be resolved.
+  Future<({double lon, double lat})> _geocodeAddress(String address) async {
+    final geocodeUrl = Uri.parse(
+      'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates',
+    );
+    final params = {
+      'f': 'json',
+      'singleLine': address,
+      'outFields': 'Match_addr',
+      'maxLocations': '1',
+    };
+    final response = await http.get(
+      geocodeUrl.replace(queryParameters: params),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Geocoding failed (HTTP ${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final candidates = data['candidates'] as List?;
+    if (candidates == null || candidates.isEmpty) {
+      throw Exception('Could not geocode address: $address');
+    }
+    final best = candidates[0] as Map<String, dynamic>;
+    final location = best['location'] as Map<String, dynamic>;
+    return (
+      lon: (location['x'] as num).toDouble(),
+      lat: (location['y'] as num).toDouble(),
+    );
+  }
+
+  /// Opens the polygon-drawing dialog for the activity density question.
+  Future<void> _openActivityDensityDrawing(int questionIndex) async {
+    try {
+      final address = _projectAddressController.text.trim();
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+      _viewModel.setFetchingParksData(true);
+      final (:lon, :lat) = await _geocodeAddress(address);
+      _viewModel.setFetchingParksData(false);
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ActivityDensityDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress: address,
+          onCalculationComplete: (result) {
+            _handleActivityDensityResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Handles the result from activity density drawing and auto-fills the answer.
+  void _handleActivityDensityResult(
+    ActivityDensityDrawingResult result,
+    int questionIndex,
+  ) {
+    _lastActivityDensityResult = result;
+    final questionInfo = _questionInfos[questionIndex];
+    final answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+    if (answerIndex != -1) {
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+      _showActivityDensityResultDialog(
+        result.regionCount,
+        result.matchedAddress,
+        result.answer,
+        result.simpleAverage,
+        result.weightedAverage,
+        result.weightedScoreAverage,
+        result.roundedScore,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Shows the activity density result dialog.
+  void _showActivityDensityResultDialog(
+    int regionCount,
+    String matchedAddress,
+    String answer,
+    double simpleAvg,
+    double weightedAvg,
+    double scoreAvg,
+    int roundedScore,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Activity Density Calculation Results',
+        foundLabel: 'EPA Block Groups Analysed:',
+        foundValueText:
+            '$regionCount region(s) found\n'
+            'Simple avg density: ${simpleAvg.toStringAsFixed(2)}\n'
+            'Weighted avg density: ${weightedAvg.toStringAsFixed(2)}\n'
+            'Weighted score avg: ${scoreAvg.toStringAsFixed(2)} â†’ rounded: $roundedScore',
+        foundIcon: Icons.apartment,
+        dataSourceText:
+            'Source: EPA Smart Location Database\n'
+            'Layer 4 â€” Activity Density (D1D)',
+        onViewMap: _showActivityDensityResultMap,
+        foundIconColor: Colors.blue[700],
+      ),
+    );
+  }
+
+  /// Shows the activity density result map.
+  Future<void> _showActivityDensityResultMap() async {
+    if (_lastActivityDensityResult == null) {
+      _showErrorDialog('No activity density data available to display.');
+      return;
+    }
+    final result = _lastActivityDensityResult!;
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No activity density data available to display map.',
+        loadingMessage: 'Loading activity density map...',
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async => ActivityDensityMapData(
+              lon: result.lon,
+              lat: result.lat,
+              matchedAddress: result.matchedAddress,
+              result: result,
+            ),
+        buildMapWidget: (mapData) => ActivityDensityMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          result: mapData.result,
+        ),
+      ),
+    );
+  }
+
+  /// Opens the polygon-drawing dialog for the land use diversity question.
+  Future<void> _openLandUseDiversityDrawing(int questionIndex) async {
+    try {
+      final address = _projectAddressController.text.trim();
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+      _viewModel.setFetchingParksData(true);
+      final (:lon, :lat) = await _geocodeAddress(address);
+      // âœ… Use `address` (what the user typed) â€“ NOT ArcGIS canonical.
+      // This ensures the dialog title always shows the user's entered address.
+      _viewModel.setFetchingParksData(false);
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => LandUseDiversityDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress:
+              address, // â† user-typed address, not ArcGIS canonical
+          onCalculationComplete: (result) {
+            _handleLandUseDiversityResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Handles the result from land use diversity drawing and auto-fills the answer.
+  void _handleLandUseDiversityResult(
+    LandUseDiversityDrawingResult result,
+    int questionIndex,
+  ) {
+    _lastLandUseDiversityResult = result;
+    final questionInfo = _questionInfos[questionIndex];
+    final answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+    if (answerIndex != -1) {
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+      _showLandUseDiversityResultDialog(
+        result.regionCount,
+        result.matchedAddress,
+        result.answer,
+        result.simpleAverage,
+        result.weightedAverage,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Shows the land use diversity result dialog (mirrors biking rate result dialog).
+  void _showLandUseDiversityResultDialog(
+    int regionCount,
+    String matchedAddress,
+    String answer,
+    double simpleAvg,
+    double weightedAvg,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Land Use Diversity Calculation Results',
+        foundLabel: 'EPA Block Groups Analysed:',
+        foundValueText:
+            '$regionCount region(s) found\n'
+            'Simple avg: ${simpleAvg.toStringAsFixed(2)}\n'
+            'Weighted avg: ${weightedAvg.toStringAsFixed(2)}',
+        foundIcon: Icons.landscape,
+        dataSourceText:
+            'Source: EPA Smart Location Database\n'
+            'Layer 7 â€” Land Use Diversity (D2B_E8MIXA)',
+        onViewMap: _showLandUseDiversityResultMap,
+        foundIconColor: Colors.green[700],
+      ),
+    );
+  }
+
+  /// Shows the land use diversity result map (mirrors biking rate map pattern).
+  Future<void> _showLandUseDiversityResultMap() async {
+    if (_lastLandUseDiversityResult == null) {
+      _showErrorDialog('No land use diversity data available to display.');
+      return;
+    }
+    final result = _lastLandUseDiversityResult!;
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No land use diversity data available to display map.',
+        loadingMessage: 'Loading land use diversity map...',
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async => LandUseDiversityMapData(
+              lon: result.lon,
+              lat: result.lat,
+              matchedAddress: result.matchedAddress,
+              result: result,
+            ),
+        buildMapWidget: (mapData) => LandUseDiversityMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          result: mapData.result,
+        ),
+      ),
+    );
+  }
+
+  /// Opens the polygon-drawing dialog for the walking rate question
+  Future<void> _openWalkingRateDrawing(int questionIndex) async {
+    try {
+      // Read the live text field â€“ same as all other autofill methods
+      final address = _projectAddressController.text.trim();
+
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+
+      _viewModel.setFetchingParksData(true);
+
+      final (:lon, :lat) = await _geocodeAddress(address);
+      // âœ… Use `address` (what the user typed) â€“ NOT ArcGIS canonical.
+      // This ensures the dialog title always shows the user's entered address.
+
+      _viewModel.setFetchingParksData(false);
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => WalkingRateDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress:
+              address, // â† user-typed address, not ArcGIS canonical
+          onCalculationComplete: (result) {
+            _handleWalkingRateResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Handles the result from walking rate drawing and auto-fills the answer
+  void _handleWalkingRateResult(
+    WalkingRateDrawingResult result,
+    int questionIndex,
+  ) {
+    _lastWalkingRateResult = result;
+
+    final questionInfo = _questionInfos[questionIndex];
+    final answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+
+    if (answerIndex != -1) {
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+      _showWalkingRateResultDialog(
+        result.tractCount,
+        result.matchedAddress,
+        result.answer,
+        result.simpleAverage,
+        result.weightedAverage,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Shows the walking rate result dialog (mirrors biking rate result dialog)
+  void _showWalkingRateResultDialog(
+    int tractCount,
+    String matchedAddress,
+    String answer,
+    double simpleAvg,
+    double weightedAvg,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Walking Rate Calculation Results',
+        foundLabel: 'Census Tracts Analysed:',
+        foundValueText:
+            '$tractCount tract(s) found\n'
+            'Simple avg: ${simpleAvg.toStringAsFixed(2)}%\n'
+            'Weighted avg: ${weightedAvg.toStringAsFixed(2)}%',
+        foundIcon: Icons.directions_walk,
+        dataSourceText:
+            'Source: U.S. Census ACS 5-Year (2020)\n'
+            'Variable: S0801_C01_010E',
+        onViewMap: _showWalkingRateResultMap,
+        foundIconColor: Colors.green[700],
+      ),
+    );
+  }
+
+  /// Shows the walking rate result map (mirrors biking rate map pattern)
+  Future<void> _showWalkingRateResultMap() async {
+    if (_lastWalkingRateResult == null) {
+      _showErrorDialog('No walking rate data available to display.');
+      return;
+    }
+    final result = _lastWalkingRateResult!;
+
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No walking rate data available to display map.',
+        loadingMessage: 'Loading walking rate map...',
+
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async => WalkingRateMapData(
+              lon: result.lon,
+              lat: result.lat,
+              matchedAddress: result.matchedAddress,
+              result: result,
+            ),
+
+        buildMapWidget: (mapData) => WalkingRateMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          result: mapData.result,
+        ),
+      ),
+    );
+  }
+
+  /// Opens the polygon-drawing dialog for the biking rate question
+  Future<void> _openBikingRateDrawing(int questionIndex) async {
+    try {
+      // Read the live text field â€” same as all other autofill methods
+      final address = _projectAddressController.text.trim();
+
+      if (address.isEmpty) {
+        _showWarningDialog('Please enter a project address first.');
+        return;
+      }
+
+      _viewModel.setFetchingParksData(true);
+
+      final (:lon, :lat) = await _geocodeAddress(address);
+      // âœ… Use `address` (what the user typed) â€” NOT `matched` (ArcGIS canonical).
+      // This ensures the dialog title always shows the user's entered address.
+
+      _viewModel.setFetchingParksData(false);
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => BikingRateDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress:
+              address, // â† user-typed address, not ArcGIS canonical
+          onCalculationComplete: (result) {
+            _handleBikingRateResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Opens the pedestrian crash drawing interface
+  Future<void> _openPedestrianCrashDrawing(int questionIndex) async {
+    try {
+      // Get the project address
+      final address = _projectAddressController.text.trim();
+
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+
+      _viewModel.setFetchingParksData(true);
+      final (:lon, :lat) = await _geocodeAddress(address);
+      final matched = address;
+
+      _viewModel.setFetchingParksData(false);
+
+      // Open drawing dialog
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => PedestrianCrashDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress: matched,
+          onCalculationComplete: (result) {
+            // Handle the calculation result
+            _handlePedestrianCrashResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Opens the bicycle crash drawing interface
+  Future<void> _openBicycleCrashDrawing(int questionIndex) async {
+    try {
+      // Get the project address
+      final address = _projectAddressController.text.trim();
+
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+
+      _viewModel.setFetchingParksData(true);
+      final (:lon, :lat) = await _geocodeAddress(address);
+      final matched = address;
+
+      _viewModel.setFetchingParksData(false);
+
+      // Open drawing dialog
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => BicycleCrashDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress: matched,
+          onCalculationComplete: (result) {
+            // Handle the calculation result
+            _handleBicycleCrashResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Handles the result from biking rate drawing and auto-fills the answer
+  void _handleBikingRateResult(
+    BikingRateDrawingResult result,
+    int questionIndex,
+  ) {
+    _lastBikingRateResult = result;
+
+    final questionInfo = _questionInfos[questionIndex];
+    final answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+
+    if (answerIndex != -1) {
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+      _showBikingRateResultDialog(
+        result.tractCount,
+        result.matchedAddress,
+        result.answer,
+        result.simpleAverage,
+        result.weightedAverage,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Handles the result from pedestrian crash drawing and auto-fills the answer
+  void _handlePedestrianCrashResult(
+    PedestrianCrashDrawingResult result,
+    int questionIndex,
+  ) {
+    // Store the result
+    _lastPedestrianCrashResult = result;
+
+    // Find the matching answer
+    final questionInfo = _questionInfos[questionIndex];
+    int answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+
+    if (answerIndex != -1) {
+      // Auto-select the answer
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+
+      // Show success dialog
+      _showPedestrianCrashResultDialog(
+        result.count,
+        result.matchedAddress,
+        result.answer,
+        result.density,
+        result.areaSqMiles,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Handles the result from bicycle crash drawing and auto-fills the answer
+  void _handleBicycleCrashResult(
+    BicycleCrashDrawingResult result,
+    int questionIndex,
+  ) {
+    // Store the result
+    _lastBicycleCrashResult = result;
+
+    // Find the matching answer
+    final questionInfo = _questionInfos[questionIndex];
+    int answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+
+    if (answerIndex != -1) {
+      // Auto-select the answer
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+
+      // Show success dialog
+      _showBicycleCrashResultDialog(
+        result.count,
+        result.matchedAddress,
+        result.answer,
+        result.density,
+        result.areaSqMiles,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Shows the biking rate result dialog (mirrors bicycle crash result dialog)
+  void _showBikingRateResultDialog(
+    int tractCount,
+    String matchedAddress,
+    String answer,
+    double simpleAvg,
+    double weightedAvg,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Biking Rate Calculation Results',
+        foundLabel: 'Census Tracts Analysed:',
+        foundValueText:
+            '$tractCount tract(s) found\n'
+            'Simple avg: ${simpleAvg.toStringAsFixed(2)}%\n'
+            'Weighted avg: ${weightedAvg.toStringAsFixed(2)}%',
+        foundIcon: Icons.directions_bike,
+        dataSourceText:
+            'Source: U.S. Census ACS 5-Year (2020)\n'
+            'Variable: S0801_C01_011E',
+        onViewMap: _showBikingRateResultMap,
+        foundIconColor: Colors.teal[700],
+      ),
+    );
+  }
+
+  /// Shows the pedestrian crash result dialog
+  void _showPedestrianCrashResultDialog(
+    int count,
+    String matchedAddress,
+    String answer,
+    double density,
+    double areaSqMiles,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Pedestrian Crash Calculation Results',
+        foundLabel: 'Crashes in Drawn Area:',
+        foundValueText:
+            '$count crash(es) found\nDensity: ${density.toStringAsFixed(1)} per sq mi',
+        foundIcon: Icons.directions_walk,
+        dataSourceText:
+            'Based on your drawn area\n'
+            'Area: ${areaSqMiles.toStringAsFixed(4)} sq miles',
+        onViewMap: _showPedestrianCrashResultMap,
+        foundIconColor: Colors.blue[700],
+        // foundIconColor: Colors.orange[700],
+      ),
+    );
+  }
+
+  /// Shows the bicycle crash result dialog
+  void _showBicycleCrashResultDialog(
+    int count,
+    String matchedAddress,
+    String answer,
+    double density,
+    double areaSqMiles,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'Bicycle Crash Calculation Results',
+        foundLabel: 'Crashes in Drawn Area:',
+        foundValueText:
+            '$count crash(es) found\nDensity: ${density.toStringAsFixed(1)} per sq mi',
+        foundIcon: Icons.pedal_bike,
+        dataSourceText:
+            'Based on your drawn area\n'
+            'Area: ${areaSqMiles.toStringAsFixed(4)} sq miles',
+        onViewMap: _showBicycleCrashResultMap,
+        foundIconColor: Colors.red[700],
+      ),
+    );
+  }
+
+  /// Shows the biking rate result map (mirrors bicycle crash map pattern)
+  Future<void> _showBikingRateResultMap() async {
+    if (_lastBikingRateResult == null) {
+      _showErrorDialog('No biking rate data available to display.');
+      return;
+    }
+    final result = _lastBikingRateResult!;
+
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No biking rate data available to display map.',
+        loadingMessage: 'Loading biking rate map...',
+
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async => BikingRateMapData(
+              lon: result.lon,
+              lat: result.lat,
+              matchedAddress: result.matchedAddress,
+              result: result,
+            ),
+
+        buildMapWidget: (mapData) => BikingRateMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          result: mapData.result,
+        ),
+      ),
+    );
+  }
+
+  /// Shows the pedestrian crash result map
+  Future<void> _showPedestrianCrashResultMap() async {
+    if (_lastPedestrianCrashResult == null) {
+      _showErrorDialog('No pedestrian crash data available to display.');
+      return;
+    }
+
+    // Create a local variable to avoid null check issues
+    final result = _lastPedestrianCrashResult!;
+
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No pedestrian crash data available to display map.',
+        loadingMessage: 'Loading crash map...',
+
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async {
+              // Return the result directly wrapped in map data format
+              return PedestrianCrashMapData(
+                lon: result.lon,
+                lat: result.lat,
+                matchedAddress: result.matchedAddress,
+                crashFeatures: result.crashesInArea,
+                crashCount: result.count,
+                density: result.density,
+                areaSqMiles: result.areaSqMiles,
+                drawnPolyline: result.drawnPolyline,
+              );
+            },
+
+        buildMapWidget: (mapData) => PedestrianCrashMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          crashFeatures: mapData.crashFeatures,
+          crashCount: mapData.crashCount,
+          density: mapData.density,
+          areaSqMiles: mapData.areaSqMiles,
+          drawnPolyline: mapData.drawnPolyline,
+        ),
+      ),
+    );
+  }
+
+  /// Shows the bicycle crash result map
+  Future<void> _showBicycleCrashResultMap() async {
+    if (_lastBicycleCrashResult == null) {
+      _showErrorDialog('No bicycle crash data available to display.');
+      return;
+    }
+
+    // Create a local variable to avoid null check issues
+    final result = _lastBicycleCrashResult!;
+
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No bicycle crash data available to display map.',
+        loadingMessage: 'Loading crash map...',
+
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async {
+              // Return the result directly wrapped in map data format
+              return BicycleCrashMapData(
+                lon: result.lon,
+                lat: result.lat,
+                matchedAddress: result.matchedAddress,
+                crashFeatures: result.crashesInArea,
+                crashCount: result.count,
+                density: result.density,
+                areaSqMiles: result.areaSqMiles,
+                drawnPolyline: result.drawnPolyline,
+              );
+            },
+
+        buildMapWidget: (mapData) => BicycleCrashMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          crashFeatures: mapData.crashFeatures,
+          crashCount: mapData.crashCount,
+          density: mapData.density,
+          areaSqMiles: mapData.areaSqMiles,
+          drawnPolyline: mapData.drawnPolyline,
+        ),
       ),
     );
   }

@@ -4,8 +4,8 @@ url = 'https://www.arcgis.com/apps/mapviewer/index.html?layers=dd2dc7787d024a3f9
 answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 4.0 }]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
-buttonText = ''
+autoFillEnabled = true
+buttonText = 'Bike Lanes'
 instructionsMarkdown = '''
 * Click on the link for the City of Henderson data, [available here](https://www.arcgis.com/apps/mapviewer/index.html?layers=dd2dc7787d024a3f9b54a7ba890de2d3)
 * Click on the magnifying glass icon on the bottom right to search. Enter the address for the project area. Press enter or the search icon.

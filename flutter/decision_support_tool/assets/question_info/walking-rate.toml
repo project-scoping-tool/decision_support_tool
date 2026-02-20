@@ -2,16 +2,16 @@ questionText = "What is the current rate of walking to work in the proposed proj
 useUrl = 'Use U.S. Census data available'
 url = 'https://data.census.gov/map/0500000US32003$14000,32003$1400000/ACSST5Y2020/S0801/S0801_C01_010E?q=S0801&layer=VT_2020_140_00_PY_D1&palette=Greens&mode=thematic&loc=35.9453,-115.1393,z9.4648&g=050XX00US32003$1400000&tid=ACSST5Y2020.S0801&cid=S0801_C01_010E'
 answers = [
-  { text = '0-1%', points = 1.0 },
-  { text = '1.1-3.3%', points = 2.0 },
-  { text = '3.4-6.7%', points = 3.0 },
-  { text = '6.8-12.2%', points = 4.0 },
-  { text = '12.3-43.2%', points = 5.0 },
+  { text = '0-1.7%', points = 1.0 },
+  { text = '1.8-5.5%', points = 2.0 },
+  { text = '5.6-12.2%', points = 3.0 },
+  { text = '12.3-29.9%', points = 4.0 },
+  { text = '30-54.6%', points = 5.0 },
 ]
 answerLeadingHeader = 'Rate:'
 domain = 'Active Transport'
-autoFillEnabled = false
-buttonText = ''
+autoFillEnabled = true
+buttonText = 'Walking Rate'
 instructionsMarkdown = '''
 * Click the link for U.S. Census Data on walking to work, available [here](https://data.census.gov/map/0500000US32003$14000,32003$1400000/ACSST5Y2020/S0801/S0801_C01_010E?q=S0801&layer=VT_2020_140_00_PY_D1&palette=Greens&mode=thematic&loc=35.9453,-115.1393,z9.4648&g=050XX00US32003$1400000&tid=ACSST5Y2020.S0801&cid=S0801_C01_010E).
 * The map is already set to show Clark County, Nevada
@@ -23,6 +23,6 @@ instructionsMarkdown = '''
   * Be sure to identify the percent who walk to work, not the Census Tract number
   * Click the "X" in the corner of the legend (or next to "deselect") to deselect and choose another Tract
   * If the project area straddles multiple Census Tracts, find the percent who walk to work in each Tract. Then, calculate the average across Tracts by adding up the percent of people who walk to work in each Tract and then dividing by the total number of Tracts.
-* Select the corresponding DST option.'''
+* Select the corresponding PST option.'''
 videoId = '1OLQFJw4iB0IllPg_RHO43qdV7CImgHz8'
 hint = ''

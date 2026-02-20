@@ -14,7 +14,7 @@ buttonText = 'Schools'
 instructionsMarkdown = '''
 * Click on the link for the Clark County Education Data tool, [available here](https://www.arcgis.com/apps/mapviewer/index.html?layers=ca9eba42cebc4b0c965ffe80a3923978).
 * Click on the magnifying glass icon located on the lower right of the map.
-* Enter the address of the project area into the search bar then either press enter or click on the magnifying glass icon on the right side of the search bar
+* Enter the address of the project area into the search bar then press enter.
 * Zoom out from the address area using the minus (-) button on the lower right of the map
 * Both CCSD and private schools will appear color-coded on the map as indicated in the legend that displays on the right side under “Symbology.” CCSD schools will feature additional labels, including flags and names.
 * Zoom in and out as needed to see schools within ½ mile radius

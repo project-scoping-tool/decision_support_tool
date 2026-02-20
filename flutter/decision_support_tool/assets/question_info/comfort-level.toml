@@ -1,6 +1,6 @@
 questionText = 'What is the level of comfort on the closest collector or arterial roadway segment(s)?'
 useUrl = 'Use RTC Ped/Bike Plan Level of Comfort Online Tool'
-url = 'https://rtcsnv.maps.arcgis.com/apps/webappviewer/index.html?id=f3ee5b445fdf48d18e6969ef106c5e09'
+url = 'https://rtcsnv.maps.arcgis.com/apps/instant/atlas/index.html?appid=5dc8ccfc889447b7bbc16adaf47380c8&webmap=55a91395767f47cbb8d549bfbbeca5cf'
 answers = [
   { text = 'Level 4', points = 3.125 },
   { text = 'Level 3', points = 6.25 },
@@ -13,7 +13,7 @@ domain = ''
 autoFillEnabled = false
 buttonText = ''
 instructionsMarkdown = '''
-* Open the Existing Level of Comfort for bicycling map tool from the Regional Transportation Commission Regional Bicycle and Pedestrian Plan, available here.
+* Open the Existing Level of Comfort for bicycling map tool from the Regional Transportation Commission Regional Bicycle and Pedestrian Plan, [available here](https://rtcsnv.maps.arcgis.com/apps/instant/atlas/index.html?appid=5dc8ccfc889447b7bbc16adaf47380c8&webmap=55a91395767f47cbb8d549bfbbeca5cf).
 * Enter the project area's address in the search box at the top left of the map.
 * Zoom out from the address area using the minus icon button on the upper left of the map screen
 * Identify the nearest collector or arterial roadway with a green, blue, orange, or red line on the map as indicated in the legend that displays on the right side of the screen.

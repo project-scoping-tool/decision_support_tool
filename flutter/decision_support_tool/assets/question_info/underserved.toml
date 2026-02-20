@@ -27,6 +27,7 @@ instructionsMarkdown = '''
 * A State Decile Information box will appear. Use this for the ADI value AND the point value.
   * If the project area straddles multiple state decile values, average them.
   * Round decimal of .5 or more up to the next whole number and decimals under .5 down.
+  * If no decile information is available for the block in which the address is located, average the decile values of all contiguous blocks. 
 * Place the value, between 1 and 10 in the “Pts” column'''
 videoId = '1LJynIeiBG8sgR84NZj1VV8XQ_DLKc2_l'
 hint = ''

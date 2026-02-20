@@ -24,7 +24,7 @@ instructionsMarkdown = '''
   * You should review the “MAPS Mini Protocol and Picture Guide” before going on to the next section, as it provides field procedures for data collection with a more in-depth understanding of how to assess segments during the survey for each question.
 * Click on the MAPS Mini Survey
 * Complete the "MAPS Mini Survey" for each segment - i.e., block. Average the MAPS Mini points for all segments.
-* Use the MAPS Mini Points to derive and record the corresponding DST points.
+* Use the MAPS Mini Points to derive and record the corresponding PST points.
 * Note: the MAPS Mini Survey may also be completed using online maps, though the information may not be as up-to-date.
 '''
 videoId = '1zUzgSCSfwZu3MJGTe3hWTMy7qyol7_sq'

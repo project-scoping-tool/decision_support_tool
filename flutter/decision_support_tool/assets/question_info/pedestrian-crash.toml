@@ -11,8 +11,8 @@ answers = [
 ]
 answerLeadingHeader = 'Crashes:'
 domain = 'Crash'
-autoFillEnabled = false
-buttonText = ''
+autoFillEnabled = true
+buttonText = 'Pedestrian Crash'
 instructionsMarkdown = '''
 * Click on the link for Nevada Pedestrian Crash Data 2018-2021, available [here](https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=d4aff382b1e6440786db5777c29e2022).
 * Enter an address within the project area into the search bar and click "Search."
@@ -25,7 +25,8 @@ instructionsMarkdown = '''
 * Click on the top Gear Icon next to the Print icon. Under "Choose Units of Analysis" make sure the units are "Square Miles" for area and "Miles" for length. Hit "Close."
 * Calculate the pedestrian crash density in the area:
   * Note the number of pedestrian crashes in the project's buffer zone. This is displayed in parentheses to the right of "Pedestrian Crashes 2018-2021."
-  * Divide the number of pedestrian crashes by the buffer zone's area in mi2. This area is displayed in the Screening Box above the Gear and Print Icons. Round to the nearest whole number.
-* Return to the DST to click on the associated range or value.'''
+  * Divide the number of pedestrian crashes by the buffer zone's area in mi². This area is displayed in the Screening Box above the Gear and Print Icons. Round to the nearest whole number.
+  * Round to the nearest whole number.
+* Return to the PST to click on the associated range or value.'''
 videoId = '1t34H40QXmlnKO9iO5pMTtZ1IZV8PbMQk'
 hint = ''

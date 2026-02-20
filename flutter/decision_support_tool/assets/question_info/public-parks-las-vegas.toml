@@ -9,8 +9,8 @@ answers = [
 ]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
-buttonText = ''
+autoFillEnabled = true
+buttonText = 'Parks'
 instructionsMarkdown = '''
 * Click on the link for the City of Las Vegas Interactive Map, [available here](https://experience.arcgis.com/experience/50802b61584341ad8096b907621c48be/?draft=true&org=lasvegas).
 * Click “OK” on the opening disclaimer, if it appears.

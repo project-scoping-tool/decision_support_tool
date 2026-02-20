@@ -12,7 +12,7 @@ questionInfoIds = [
     'schools',
     'public-parks',
     'bus-stops-rtc',
-    'bike-lanes-rtc',
+    'bike-lanes-henderson',
   ],
   [
     'walkability',

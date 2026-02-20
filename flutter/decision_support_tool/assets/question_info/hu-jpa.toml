@@ -12,8 +12,8 @@ answers = [
 ]
 answerLeadingHeader = 'Density:'
 domain = 'Land Use'
-autoFillEnabled = false
-buttonText = ''
+autoFillEnabled = true
+buttonText = 'Activity Density (HU+Jobs/Acre)'
 instructionsMarkdown = '''
 * Click on the link provided for the U.S. Environmental Protection Agency (EPA) Smart Location database, available here.
 * Under "View In," select "ArcGIS Online Map Viewer”
