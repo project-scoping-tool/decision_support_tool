@@ -954,6 +954,18 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     VoidCallback onPressed;
 
     switch (questionInfo.buttonText) {
+      case 'ADI': // S1-Q1
+        buttonText = 'Auto-fill from ADI Database';
+        buttonIcon = Icons.analytics;
+        onPressed = () => _fetchAdiValue(questionIndex);
+        break;
+
+      case 'Biking Rate': // S1-Q2
+        buttonText = 'Draw Area & Calculate Biking Rate';
+        buttonIcon = Icons.pedal_bike;
+        onPressed = () => _openBikingRateDrawing(questionIndex);
+        break;
+
       case 'Parks': // S1-Q9
         buttonText = 'Auto-fill from Park Data';
         buttonIcon = Icons.map;
@@ -966,17 +978,13 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         onPressed = () => _fetchBusStopsCount(questionIndex);
         break;
 
-      case 'ADI': // S1-Q1
-        buttonText = 'Auto-fill from ADI Database';
-        buttonIcon = Icons.analytics;
-        onPressed = () => _fetchAdiValue(questionIndex);
+      case 'Bike Lanes': // S1-Q11
+        buttonText = 'Auto-fill from Bike Lane Data';
+        buttonIcon = Icons.directions_bike;
+        onPressed = () => _fetchBikeLanesCount(questionIndex);
         break;
 
-      // case 'Bike Lanes': // S1-Q11
-      //   buttonText = 'Auto-fill from Bike Lane Data';
-      //   buttonIcon = Icons.directions_bike;
-      //   onPressed = () => _fetchBikeLanesCount(questionIndex);
-      //   break;
+      // update v2
 
       // case 'Schools': // S1-Q8
       //   buttonText = 'Auto-fill from Schools Data';
@@ -995,12 +1003,6 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       //   buttonIcon = Icons.draw;
       //   onPressed = () => _openPedestrianCrashDrawing(questionIndex);
       //   break;
-
-      case 'Biking Rate': // S1-Q2
-        buttonText = 'Draw Area & Calculate Biking Rate';
-        buttonIcon = Icons.pedal_bike;
-        onPressed = () => _openBikingRateDrawing(questionIndex);
-        break;
 
       // case 'Walking Rate': // S1-Q3
       //   buttonText = 'Draw Area & Calculate Walking Rate';
@@ -1503,7 +1505,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       final address = _projectAddressController.text.trim();
 
       if (address.isEmpty) {
-        _showErrorDialog('Please enter a project address first.');
+        _showWarningDialog('Please enter a project address first.');
         return;
       }
 

@@ -1,7 +1,7 @@
 
 questionText = 'How many housing units + jobs per acre in the area?'
 useUrl = 'Use EPA Smart Location database'
-url = 'https://geodata.epa.gov/arcgis/rest/services/OA/SmartLocationDatabase/MapServer'
+url = 'https://epa.maps.arcgis.com/home/webmap/viewer.html?webmap=137d4e512249480c980e00807562da10'
 answers = [
   { text = 'No Density', points = 0.0 },
   { text = '0-0.27', points = 1.0 },
@@ -15,18 +15,18 @@ domain = 'Land Use'
 autoFillEnabled = true
 buttonText = 'Activity Density (HU+Jobs/Acre)'
 instructionsMarkdown = '''
-* Click on the link provided for the U.S. Environmental Protection Agency (EPA) Smart Location database, available here.
-* Under "View In," select "ArcGIS Online Map Viewer”
-* Click on the magnifying glass in the bottom right corner and enter the address for the project area inside the text box that appears.
-* On the left, click on "Basemap" (the icon with four small squares) and select "Imagery Hybrid."
-* Click on "Layers" in the top left if it is not already selected.
-* Click on the right-pointing arrow next to "Smart Location Database" to reveal the drop-down menu.
-* Click on the eye icon next to “Activity density (housing + jobs per acre)” to change the visibility.
+* Click on the link provided for the EPA Smart Location database, [available here](https://epa.maps.arcgis.com/home/webmap/viewer.html?webmap=137d4e512249480c980e00807562da10).
+* Click on the “Content” button in the top left corner, under the “Basemap” button.
+* Click on the sideways carrot button to the left of “SmartLocationDatabase” to expand it into a dropdown menu
+* Click on the box for “Street intersection density” to take it off the map, and any other checked boxes
+* Check the box titled “Activity density (housing + jobs per acre)”
+* Enter the address for the project area inside the text box in the top right corner and hit the search button
   * Zoom in or out on the map to view entire project area
-* Click on "Properties” in the top right. Cross-reference color(s) in the project area with the color/number range listed under “Symbology.”
-  * For each color-coded Block Group, convert the Activity Density to a numerical value as follow: No activity → 0; 0-0.27 → 1; 0.28-2.02 → 2; 2.03-4.30 → 3; 4.31-8.31 → 4; >8.32 → 5.
-  * If the project area straddles multiple color-coded zones, calculate the average of the numerical values. Round decimals of .5 or more up to the next whole number and decimals under .5 down.
-  * Then, convert the numerical value back into the corresponding density.
-* Select the corresponding Density.'''
+* On the left, click on "Basemap" (the icon with four small squares) and select "Imagery Hybrid."
+* Click on "Legend” in the top left corner
+* Cross-reference color(s) in the project area with the color/number range listed
+  * If the project area straddles multiple color-coded zones, calculate the mid-point value for each Block Group and then compute their average. If this average is a whole number, then choose the lower interval as your response. For instance, if the average is 2, you would select 0-2 as your range, instead of 2-3.
+* Click the corresponding density.
+'''
 videoId = '1VlME61GXEpojU9swIOKF3-N9gVxOcIjv'
 hint = ''
