@@ -38,6 +38,9 @@ import 'package:decision_support_tool/ui/land_use_diversity_map_widget.dart';
 import 'package:decision_support_tool/services/activity_density_drawing_service.dart';
 import 'package:decision_support_tool/ui/activity_density_drawing_widget.dart';
 import 'package:decision_support_tool/ui/activity_density_map_widget.dart';
+import 'package:decision_support_tool/services/walkability_index_drawing_service.dart';
+import 'package:decision_support_tool/ui/walkability_index_drawing_widget.dart';
+import 'package:decision_support_tool/ui/walkability_index_map_widget.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -143,6 +146,9 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
   /// Store the last House per acre drawing result for map display
   ActivityDensityDrawingResult? _lastActivityDensityResult;
+
+  /// Store the last walkability drawing result for map display
+  WalkabilityIndexDrawingResult? _lastWalkabilityResult;
 
   QuestionSectionViewModel get _viewModel => widget.viewModel;
   String get _jurisdiction => widget.viewModel.assessmentInfo.jurisdiction;
@@ -361,19 +367,22 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       padding: EdgeInsets.symmetric(horizontal: _screenWidth * 0.03),
       child: ColoredBox(
         color: backgroundColor,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildWidgetQuestionCell1(questionIndex),
-              Container(width: 3.0, color: Colors.white),
-              _buildWidgetQuestionCell2(questionIndex),
-              Container(width: 3.0, color: Colors.white),
-              _buildWidgetQuestionCell3(questionIndex),
-            ],
-          ),
+        // child: ClipRect(
+        //   child: IntrinsicHeight(
+        child: Row(
+          //crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWidgetQuestionCell1(questionIndex),
+            Container(width: 3.0, color: Colors.white),
+            _buildWidgetQuestionCell2(questionIndex),
+            Container(width: 3.0, color: Colors.white),
+            _buildWidgetQuestionCell3(questionIndex),
+          ],
         ),
       ),
+      //   ),
+      // ),
     );
   }
 
@@ -388,7 +397,9 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       ),
       width: _screenWidth * 0.94 * 0.8 - 6.0,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.start,
+        // mainAxisSize: MainAxisSize.min,
         children: [
           // Question text
           Align(
@@ -1004,10 +1015,15 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       //   break;
 
       // case 'Activity Density (HU+Jobs/Acre)': // S1-Q7
-      //   // Matches the buttonText in hu-jpa.toml
       //   buttonText = 'Draw Area & Calculate Activity Density';
       //   buttonIcon = Icons.apartment;
       //   onPressed = () => _openActivityDensityDrawing(questionIndex);
+      //   break;
+
+      // case 'Walkability Index': // S2-Q1
+      //   buttonText = 'Draw Area & Calculate Walkability Score';
+      //   buttonIcon = Icons.directions_walk;
+      //   onPressed = () => _openWalkabilityDrawing(questionIndex);
       //   break;
 
       default:
@@ -1691,6 +1707,132 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     return (
       lon: (location['x'] as num).toDouble(),
       lat: (location['y'] as num).toDouble(),
+    );
+  }
+
+  /// Opens the polygon-drawing dialog for the walkability index question.
+  Future<void> _openWalkabilityDrawing(int questionIndex) async {
+    try {
+      final address = _projectAddressController.text.trim();
+      if (address.isEmpty) {
+        _showErrorDialog('Please enter a project address first.');
+        return;
+      }
+      _viewModel.setFetchingParksData(true);
+      final (:lon, :lat) = await _geocodeAddress(address);
+      _viewModel.setFetchingParksData(false);
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => WalkabilityIndexDrawingWidget(
+          lat: lat,
+          lon: lon,
+          matchedAddress: address,
+          onCalculationComplete: (result) {
+            _handleWalkabilityResult(result, questionIndex);
+          },
+        ),
+      );
+    } catch (e) {
+      _viewModel.setFetchingParksData(false);
+      _showErrorDialog('Error: $e');
+    }
+  }
+
+  /// Handles the result from walkability drawing and auto-fills the answer.
+  void _handleWalkabilityResult(
+    WalkabilityIndexDrawingResult result,
+    int questionIndex,
+  ) {
+    _lastWalkabilityResult = result;
+    final questionInfo = _questionInfos[questionIndex];
+    final answerIndex = questionInfo.answers.indexWhere(
+      (a) => a.text == result.answer,
+    );
+    if (answerIndex != -1) {
+      _viewModel.selectAnswer(questionIndex, answerIndex);
+      _showWalkabilityResultDialog(
+        result.regionCount,
+        result.matchedAddress,
+        result.answer,
+        result.simpleAverage,
+        result.weightedAverage,
+        result.roundedCategory,
+      );
+    } else {
+      _showErrorDialog('Could not match answer range: ${result.answer}');
+    }
+  }
+
+  /// Shows the walkability result dialog.
+  void _showWalkabilityResultDialog(
+    int regionCount,
+    String matchedAddress,
+    String answer,
+    double simpleAvg,
+    double weightedAvg,
+    int roundedCategory,
+  ) {
+    showAutoFillResultDialog(
+      context: context,
+      screenWidth: _screenWidth,
+      matchedAddress: matchedAddress,
+      answer: answer,
+      config: AutoFillDialogConfig(
+        titleText: 'National Walkability Index Results',
+        foundLabel: 'EPA Block Groups Analysed:',
+        foundValueText:
+            '$regionCount region(s) found\n'
+            'Simple avg (NatWalkInd): ${simpleAvg.toStringAsFixed(2)}\n'
+            'Weighted avg (NatWalkInd): ${weightedAvg.toStringAsFixed(2)}\n'
+            'Rounded category: $roundedCategory',
+        foundIcon: Icons.directions_walk,
+        dataSourceText:
+            'Source: EPA National Walkability Index\n'
+            'Layer 0 – NatWalkInd (1–20)',
+        onViewMap: _showWalkabilityResultMap,
+        foundIconColor: Colors.teal[700],
+      ),
+    );
+  }
+
+  /// Shows the walkability result map.
+  Future<void> _showWalkabilityResultMap() async {
+    if (_lastWalkabilityResult == null) {
+      _showErrorDialog('No walkability data available to display.');
+      return;
+    }
+    final result = _lastWalkabilityResult!;
+    await showAutoFillMapDialog(
+      context: context,
+      showErrorDialog: _showErrorDialog,
+      config: AutoFillMapDialogConfig(
+        lastResult: result,
+        noDataMessage: 'No walkability data available to display map.',
+        loadingMessage: 'Loading walkability index map…',
+        getLon: (r) => r.lon,
+        getLat: (r) => r.lat,
+        getMatchedAddress: (r) => r.matchedAddress,
+        getLayerId: (r) => 0,
+        fetchMapData:
+            ({
+              required double lon,
+              required double lat,
+              required String matchedAddress,
+              required int layerId,
+            }) async => WalkabilityIndexMapData(
+              lon: result.lon,
+              lat: result.lat,
+              matchedAddress: result.matchedAddress,
+              result: result,
+            ),
+        buildMapWidget: (mapData) => WalkabilityIndexMapWidget(
+          lat: mapData.lat,
+          lon: mapData.lon,
+          matchedAddress: mapData.matchedAddress,
+          result: mapData.result,
+        ),
+      ),
     );
   }
 
