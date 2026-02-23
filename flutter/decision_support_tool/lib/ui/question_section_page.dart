@@ -203,7 +203,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       child: Column(
         children: [
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
-          _buildProjectAddressInput(), //
+          // _buildProjectAddressInput(), //
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.02)),
           _buildWidgetTableHeader(),
           _buildWidgetTableCells(),
@@ -467,7 +467,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
 
           // AUTO-FILL BUTTON
-          _buildWidgetAutoFillButton(questionIndex), //
+          // _buildWidgetAutoFillButton(questionIndex), //
           // Space
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
           // Row for answers
