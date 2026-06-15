@@ -203,7 +203,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       child: Column(
         children: [
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
-          // _buildProjectAddressInput(), //
+          _buildProjectAddressInput(), //
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.02)),
           _buildWidgetTableHeader(),
           _buildWidgetTableCells(),
@@ -467,7 +467,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
 
           // AUTO-FILL BUTTON
-          // _buildWidgetAutoFillButton(questionIndex), //
+          _buildWidgetAutoFillButton(questionIndex), //
           // Space
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
           // Row for answers
@@ -986,23 +986,25 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
       // update v2
 
-      // case 'Schools': // S1-Q8
-      //   buttonText = 'Auto-fill from Schools Data';
-      //   buttonIcon = Icons.school;
-      //   onPressed = () => _fetchSchoolsCount(questionIndex);
-      //   break;
+      case 'Schools': // S1-Q8
+        buttonText = 'Auto-fill from Schools Data';
+        buttonIcon = Icons.school;
+        onPressed = () => _fetchSchoolsCount(questionIndex);
+        break;
 
-      // case 'Bicycle Crash': // S1-Q5
-      //   buttonText = 'Draw Area & Calculate Crashes';
-      //   buttonIcon = Icons.draw;
-      //   onPressed = () => _openBicycleCrashDrawing(questionIndex);
-      //   break;
+      case 'Bicycle Crash': // S1-Q5
+        buttonText = 'Draw Area & Calculate Crashes';
+        buttonIcon = Icons.draw;
+        onPressed = () => _openBicycleCrashDrawing(questionIndex);
+        break;
 
-      // case 'Pedestrian Crash': // S1-Q4
-      //   buttonText = 'Draw Area & Calculate Crashes';
-      //   buttonIcon = Icons.draw;
-      //   onPressed = () => _openPedestrianCrashDrawing(questionIndex);
-      //   break;
+      case 'Pedestrian Crash': // S1-Q4
+        buttonText = 'Draw Area & Calculate Crashes';
+        buttonIcon = Icons.draw;
+        onPressed = () => _openPedestrianCrashDrawing(questionIndex);
+        break;
+
+      // update v3
 
       // case 'Walking Rate': // S1-Q3
       //   buttonText = 'Draw Area & Calculate Walking Rate';

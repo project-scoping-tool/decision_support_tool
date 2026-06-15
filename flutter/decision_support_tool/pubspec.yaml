@@ -80,6 +80,8 @@ flutter:
     - assets/data/nevada_adi_data.json
     - assets/data/crashes_bicyclist.csv
     - assets/data/crashes_pedestrian.csv
+    - assets/data/clark_county_biking_rate.json
+    - assets/data/clark_county_schools.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
