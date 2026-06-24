@@ -652,12 +652,16 @@ class BicycleCrashDrawingService {
     if (polylinePoints.isEmpty) return [];
 
     // Auto-close: connect last point back to first to form a closed polygon.
+    // This matches ArcGIS behaviour where the drawn perimeter polyline is
+    // treated as a closed polygon before buffering outward.
     var pts = List<List<double>>.from(polylinePoints);
     if (pts.length > 1) {
-      final dx = pts.first[0] - pts.last[0];
-      final dy = pts.first[1] - pts.last[1];
+      final first = pts.first;
+      final last = pts.last;
+      final dx = first[0] - last[0];
+      final dy = first[1] - last[1];
       if (math.sqrt(dx * dx + dy * dy) > 1e-10) {
-        pts = [...pts, pts.first];
+        pts = [...pts, first]; // close the ring
       }
     }
 
@@ -665,6 +669,8 @@ class BicycleCrashDrawingService {
       return _createCirclePoints(pts[0], bufferMiles, 64);
     }
 
+    // Remove closing duplicate for the loop (we re-added it above for visual,
+    // but the Minkowski loop works on unique vertices)
     final ring = pts.sublist(0, pts.length - 1);
     final n = ring.length;
 
@@ -673,9 +679,6 @@ class BicycleCrashDrawingService {
     final bufferLatDeg = bufferMiles / 69.0;
     final bufferLonDeg =
         bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
-    // Scale factor to convert lon-degrees to miles (for angle calculation)
-    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
-    final latToMiles = 69.0;
 
     // Signed area to determine winding direction
     double signedArea = 0.0;
@@ -684,8 +687,8 @@ class BicycleCrashDrawingService {
       signedArea += ring[i][0] * ring[j][1] - ring[j][0] * ring[i][1];
     }
     signedArea /= 2.0;
-    // CCW (signedArea > 0): outward = right of travel = angle - pi/2
-    // CW  (signedArea < 0): outward = left  of travel = angle + pi/2
+    // CCW (signedArea > 0): outward normal = right of travel = angle - pi/2
+    // CW  (signedArea < 0): outward normal = left  of travel = angle + pi/2
     final perpSign = signedArea > 0 ? -1.0 : 1.0;
 
     const arcSteps = 16;
@@ -696,18 +699,10 @@ class BicycleCrashDrawingService {
       final prev = ring[(i - 1 + n) % n];
       final next = ring[(i + 1) % n];
 
-      // Convert degree differences to miles for correct angle calculation.
-      // Using raw degree differences gives wrong angles for diagonal edges
-      // because 1 lon-degree ≠ 1 lat-degree in miles at non-equator latitudes.
-      final dx1 = (current[0] - prev[0]) * lonToMiles;
-      final dy1 = (current[1] - prev[1]) * latToMiles;
-      final dx2 = (next[0] - current[0]) * lonToMiles;
-      final dy2 = (next[1] - current[1]) * latToMiles;
-
-      // Cross product determines convexity
-      final cross = dx1 * dy2 - dy1 * dx2;
-      // Convex for CCW (perpSign=-1): cross > 0; for CW: cross < 0
-      final isConvex = (cross * perpSign) < 0;
+      final dx1 = current[0] - prev[0];
+      final dy1 = current[1] - prev[1];
+      final dx2 = next[0] - current[0];
+      final dy2 = next[1] - current[1];
 
       final inAngle = math.atan2(dy1, dx1);
       final outAngle = math.atan2(dy2, dx2);
@@ -719,8 +714,7 @@ class BicycleCrashDrawingService {
       while (delta > math.pi) delta -= 2 * math.pi;
       while (delta < -math.pi) delta += 2 * math.pi;
 
-      if (isConvex && delta.abs() > 0.01) {
-        // Convex corner: sweep outward arc
+      if (delta.abs() > 0.01) {
         final steps = (arcSteps * delta.abs() / math.pi).ceil().clamp(
           4,
           arcSteps,
@@ -734,15 +728,9 @@ class BicycleCrashDrawingService {
           ]);
         }
       } else {
-        // Concave corner or straight: single miter point (no arc sweep)
-        final bisector = perpIn + delta / 2.0;
-        final cosHalf = math.cos(delta / 2.0);
-        final miter = cosHalf.abs() > 0.1
-            ? (1.0 / cosHalf).clamp(-4.0, 4.0)
-            : 1.0;
         bufferedPoints.add([
-          current[0] + bufferLonDeg * math.cos(bisector) * miter,
-          current[1] + bufferLatDeg * math.sin(bisector) * miter,
+          current[0] + bufferLonDeg * math.cos(perpIn),
+          current[1] + bufferLatDeg * math.sin(perpIn),
         ]);
       }
     }

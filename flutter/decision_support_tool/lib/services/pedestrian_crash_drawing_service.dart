@@ -644,68 +644,74 @@ class PedestrianCrashDrawingService {
     double bufferMiles,
   ) {
     if (polylinePoints.isEmpty) return [];
-
-    // Auto-close: connect last point back to first to form a closed polygon.
-    var pts = List<List<double>>.from(polylinePoints);
-    if (pts.length > 1) {
-      final dx = pts.first[0] - pts.last[0];
-      final dy = pts.first[1] - pts.last[1];
-      if (math.sqrt(dx * dx + dy * dy) > 1e-10) {
-        pts = [...pts, pts.first];
-      }
+    if (polylinePoints.length == 1) {
+      return _createCirclePoints(polylinePoints[0], bufferMiles, 64);
     }
 
-    if (pts.length < 3) {
-      return _createCirclePoints(pts[0], bufferMiles, 64);
-    }
-
-    final ring = pts.sublist(0, pts.length - 1);
-    final n = ring.length;
-
-    // Average latitude for longitude degree correction
-    final avgLat = ring.map((p) => p[1]).reduce((a, b) => a + b) / n;
-    final bufferLatDeg = bufferMiles / 69.0;
-    final bufferLonDeg =
-        bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
-    // Scale factor to convert lon-degrees to miles (for angle calculation)
+    final pts = List<List<double>>.from(polylinePoints);
+    final n = pts.length;
+    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / n;
     final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
     final latToMiles = 69.0;
 
-    // Signed area to determine winding direction
+    final closeDxMi = (pts.first[0] - pts.last[0]) * lonToMiles;
+    final closeDyMi = (pts.first[1] - pts.last[1]) * latToMiles;
+    final closeDistMi =
+        math.sqrt(closeDxMi * closeDxMi + closeDyMi * closeDyMi);
+
+    if (closeDistMi < 0.031 && n >= 3) {
+      return _createClosedPolygonBuffer(pts, bufferMiles, avgLat);
+    }
+    return _createOpenPolylineBuffer(pts, bufferMiles, avgLat);
+  }
+
+  static List<List<double>> _createClosedPolygonBuffer(
+    List<List<double>> pts,
+    double bufferMiles,
+    double avgLat,
+  ) {
+    var ring = List<List<double>>.from(pts);
+    final dx = ring.first[0] - ring.last[0];
+    final dy = ring.first[1] - ring.last[1];
+    if (math.sqrt(dx * dx + dy * dy) > 1e-10) {
+      ring = [...ring, ring.first];
+    }
+    final closedRing = ring.sublist(0, ring.length - 1);
+    final nn = closedRing.length;
+
+    final bufferLatDeg = bufferMiles / 69.0;
+    final bufferLonDeg =
+        bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
+    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
+    final latToMiles = 69.0;
+
     double signedArea = 0.0;
-    for (int i = 0; i < n; i++) {
-      final j = (i + 1) % n;
-      signedArea += ring[i][0] * ring[j][1] - ring[j][0] * ring[i][1];
+    for (int i = 0; i < nn; i++) {
+      final j = (i + 1) % nn;
+      signedArea += closedRing[i][0] * closedRing[j][1] -
+          closedRing[j][0] * closedRing[i][1];
     }
     signedArea /= 2.0;
-    // CCW (signedArea > 0): outward = right of travel = angle - pi/2
-    // CW  (signedArea < 0): outward = left  of travel = angle + pi/2
     final perpSign = signedArea > 0 ? -1.0 : 1.0;
 
     const arcSteps = 16;
     final bufferedPoints = <List<double>>[];
 
-    for (int i = 0; i < n; i++) {
-      final current = ring[i];
-      final prev = ring[(i - 1 + n) % n];
-      final next = ring[(i + 1) % n];
+    for (int i = 0; i < nn; i++) {
+      final current = closedRing[i];
+      final prev = closedRing[(i - 1 + nn) % nn];
+      final next = closedRing[(i + 1) % nn];
 
-      // Convert degree differences to miles for correct angle calculation.
-      // Using raw degree differences gives wrong angles for diagonal edges
-      // because 1 lon-degree ≠ 1 lat-degree in miles at non-equator latitudes.
       final dx1 = (current[0] - prev[0]) * lonToMiles;
       final dy1 = (current[1] - prev[1]) * latToMiles;
       final dx2 = (next[0] - current[0]) * lonToMiles;
       final dy2 = (next[1] - current[1]) * latToMiles;
 
-      // Cross product determines convexity
       final cross = dx1 * dy2 - dy1 * dx2;
-      // Convex for CCW (perpSign=-1): cross > 0; for CW: cross < 0
       final isConvex = (cross * perpSign) < 0;
 
       final inAngle = math.atan2(dy1, dx1);
       final outAngle = math.atan2(dy2, dx2);
-
       final perpIn = inAngle + perpSign * math.pi / 2.0;
       final perpOut = outAngle + perpSign * math.pi / 2.0;
 
@@ -714,11 +720,8 @@ class PedestrianCrashDrawingService {
       while (delta < -math.pi) delta += 2 * math.pi;
 
       if (isConvex && delta.abs() > 0.01) {
-        // Convex corner: sweep outward arc
-        final steps = (arcSteps * delta.abs() / math.pi).ceil().clamp(
-          4,
-          arcSteps,
-        );
+        final steps =
+            (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
         for (int j = 0; j <= steps; j++) {
           final t = j / steps;
           final angle = perpIn + t * delta;
@@ -728,7 +731,6 @@ class PedestrianCrashDrawingService {
           ]);
         }
       } else {
-        // Concave corner or straight: single miter point (no arc sweep)
         final bisector = perpIn + delta / 2.0;
         final cosHalf = math.cos(delta / 2.0);
         final miter = cosHalf.abs() > 0.1
@@ -745,6 +747,161 @@ class PedestrianCrashDrawingService {
       bufferedPoints.add(bufferedPoints[0]);
     }
     return bufferedPoints;
+  }
+
+  static List<List<double>> _createOpenPolylineBuffer(
+    List<List<double>> pts,
+    double bufferMiles,
+    double avgLat,
+  ) {
+    final n = pts.length;
+    final bufferLatDeg = bufferMiles / 69.0;
+    final bufferLonDeg =
+        bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
+    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
+    final latToMiles = 69.0;
+    const arcSteps = 16;
+
+    final segAngles = <double>[];
+    for (int i = 0; i < n - 1; i++) {
+      final ddx = (pts[i + 1][0] - pts[i][0]) * lonToMiles;
+      final ddy = (pts[i + 1][1] - pts[i][1]) * latToMiles;
+      segAngles.add(math.atan2(ddy, ddx));
+    }
+
+    final rightSide = <List<double>>[];
+    final leftSide = <List<double>>[];
+
+    for (int i = 0; i < n; i++) {
+      if (i == 0) {
+        final pa = segAngles[0] - math.pi / 2;
+        rightSide.add([
+          pts[0][0] + bufferLonDeg * math.cos(pa),
+          pts[0][1] + bufferLatDeg * math.sin(pa),
+        ]);
+      } else if (i == n - 1) {
+        final pa = segAngles[n - 2] - math.pi / 2;
+        rightSide.add([
+          pts[n - 1][0] + bufferLonDeg * math.cos(pa),
+          pts[n - 1][1] + bufferLatDeg * math.sin(pa),
+        ]);
+      } else {
+        final perpIn = segAngles[i - 1] - math.pi / 2;
+        final perpOut = segAngles[i] - math.pi / 2;
+        final dxIn = (pts[i][0] - pts[i - 1][0]) * lonToMiles;
+        final dyIn = (pts[i][1] - pts[i - 1][1]) * latToMiles;
+        final dxOut = (pts[i + 1][0] - pts[i][0]) * lonToMiles;
+        final dyOut = (pts[i + 1][1] - pts[i][1]) * latToMiles;
+        final cross = dxIn * dyOut - dyIn * dxOut;
+        var delta = perpOut - perpIn;
+        while (delta > math.pi) delta -= 2 * math.pi;
+        while (delta < -math.pi) delta += 2 * math.pi;
+
+        if (cross > 1e-10 && delta.abs() > 0.01) {
+          final steps =
+              (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
+          for (int j = 0; j <= steps; j++) {
+            final t = j / steps;
+            final angle = perpIn + t * delta;
+            rightSide.add([
+              pts[i][0] + bufferLonDeg * math.cos(angle),
+              pts[i][1] + bufferLatDeg * math.sin(angle),
+            ]);
+          }
+        } else {
+          final bisector = perpIn + delta / 2.0;
+          final cosHalf = math.cos(delta / 2.0);
+          final miter = cosHalf.abs() > 0.1
+              ? (1.0 / cosHalf).clamp(-4.0, 4.0)
+              : 1.0;
+          rightSide.add([
+            pts[i][0] + bufferLonDeg * math.cos(bisector) * miter,
+            pts[i][1] + bufferLatDeg * math.sin(bisector) * miter,
+          ]);
+        }
+      }
+    }
+
+    for (int i = 0; i < n; i++) {
+      if (i == 0) {
+        final pa = segAngles[0] + math.pi / 2;
+        leftSide.add([
+          pts[0][0] + bufferLonDeg * math.cos(pa),
+          pts[0][1] + bufferLatDeg * math.sin(pa),
+        ]);
+      } else if (i == n - 1) {
+        final pa = segAngles[n - 2] + math.pi / 2;
+        leftSide.add([
+          pts[n - 1][0] + bufferLonDeg * math.cos(pa),
+          pts[n - 1][1] + bufferLatDeg * math.sin(pa),
+        ]);
+      } else {
+        final perpIn = segAngles[i - 1] + math.pi / 2;
+        final perpOut = segAngles[i] + math.pi / 2;
+        final dxIn = (pts[i][0] - pts[i - 1][0]) * lonToMiles;
+        final dyIn = (pts[i][1] - pts[i - 1][1]) * latToMiles;
+        final dxOut = (pts[i + 1][0] - pts[i][0]) * lonToMiles;
+        final dyOut = (pts[i + 1][1] - pts[i][1]) * latToMiles;
+        final cross = dxIn * dyOut - dyIn * dxOut;
+        var delta = perpOut - perpIn;
+        while (delta > math.pi) delta -= 2 * math.pi;
+        while (delta < -math.pi) delta += 2 * math.pi;
+
+        if (cross < -1e-10 && delta.abs() > 0.01) {
+          final steps =
+              (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
+          for (int j = 0; j <= steps; j++) {
+            final t = j / steps;
+            final angle = perpIn + t * delta;
+            leftSide.add([
+              pts[i][0] + bufferLonDeg * math.cos(angle),
+              pts[i][1] + bufferLatDeg * math.sin(angle),
+            ]);
+          }
+        } else {
+          final bisector = perpIn + delta / 2.0;
+          final cosHalf = math.cos(delta / 2.0);
+          final miter = cosHalf.abs() > 0.1
+              ? (1.0 / cosHalf).clamp(-4.0, 4.0)
+              : 1.0;
+          leftSide.add([
+            pts[i][0] + bufferLonDeg * math.cos(bisector) * miter,
+            pts[i][1] + bufferLatDeg * math.sin(bisector) * miter,
+          ]);
+        }
+      }
+    }
+
+    final result = <List<double>>[];
+
+    final startAngle = segAngles[0] + math.pi / 2;
+    for (int j = 0; j <= arcSteps; j++) {
+      final t = j / arcSteps;
+      final angle = startAngle + t * math.pi;
+      result.add([
+        pts[0][0] + bufferLonDeg * math.cos(angle),
+        pts[0][1] + bufferLatDeg * math.sin(angle),
+      ]);
+    }
+
+    result.addAll(rightSide);
+
+    final endAngle = segAngles[n - 2] - math.pi / 2;
+    for (int j = 0; j <= arcSteps; j++) {
+      final t = j / arcSteps;
+      final angle = endAngle + t * math.pi;
+      result.add([
+        pts[n - 1][0] + bufferLonDeg * math.cos(angle),
+        pts[n - 1][1] + bufferLatDeg * math.sin(angle),
+      ]);
+    }
+
+    result.addAll(leftSide.reversed);
+
+    if (result.isNotEmpty) {
+      result.add(result[0]);
+    }
+    return result;
   }
 
   static List<List<double>> _createCirclePoints(
