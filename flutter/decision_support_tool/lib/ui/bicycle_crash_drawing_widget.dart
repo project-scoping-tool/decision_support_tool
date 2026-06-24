@@ -947,8 +947,8 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
       );
       // Close this dialog
       if (mounted) {
+        widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));
         Navigator.of(context).pop();
-        // Call callback with result
         widget.onCalculationComplete(result);
       }
     } catch (e) {
