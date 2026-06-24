@@ -3,12 +3,18 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:decision_support_tool/services/pedestrian_crash_drawing_service.dart';
 
-/// Interactive widget for drawing polyline and calculating pedestrian crash density
+/// Interactive widget for drawing a polygon and calculating pedestrian crash density.
 class PedestrianCrashDrawingWidget extends StatefulWidget {
   final double lat;
   final double lon;
   final String matchedAddress;
   final Function(PedestrianCrashDrawingResult) onCalculationComplete;
+
+  /// Optional: pre-populate with a previously drawn polygon.
+  final List<LatLng>? initialPoints;
+
+  /// Optional callback invoked with the final polygon before the widget closes.
+  final Function(List<LatLng>)? onPolygonSaved;
 
   const PedestrianCrashDrawingWidget({
     Key? key,
@@ -16,6 +22,8 @@ class PedestrianCrashDrawingWidget extends StatefulWidget {
     required this.lon,
     required this.matchedAddress,
     required this.onCalculationComplete,
+    this.initialPoints,
+    this.onPolygonSaved,
   }) : super(key: key);
 
   @override
@@ -25,18 +33,25 @@ class PedestrianCrashDrawingWidget extends StatefulWidget {
 
 class _PedestrianCrashDrawingWidgetState
     extends State<PedestrianCrashDrawingWidget> {
-  final List<LatLng> _drawnPoints = [];
+  late final List<LatLng> _drawnPoints;
   bool _isDrawing = false;
   bool _isCalculating = false;
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _drawnPoints = widget.initialPoints != null
+        ? List<LatLng>.from(widget.initialPoints!)
+        : [];
+  }
+
+  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
     return Dialog(
-      insetPadding: EdgeInsets.all(20.0),
+      insetPadding: const EdgeInsets.all(20.0),
       child: Container(
         width: screenWidth * 0.9,
         height: screenHeight * 0.9,
@@ -44,11 +59,15 @@ class _PedestrianCrashDrawingWidgetState
           children: [
             // Header
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
               decoration: BoxDecoration(
-                // color: Colors.orange[700],
                 color: Colors.blue[700],
-                borderRadius: BorderRadius.vertical(top: Radius.circular(4.0)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4.0),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -56,12 +75,12 @@ class _PedestrianCrashDrawingWidgetState
                   Expanded(
                     child: Row(
                       children: [
-                        Icon(Icons.draw, color: Colors.white, size: 24.0),
-                        SizedBox(width: 10.0),
+                        const Icon(Icons.draw, color: Colors.white, size: 24.0),
+                        const SizedBox(width: 10.0),
                         Expanded(
                           child: Text(
                             'Draw Project Area - ${widget.matchedAddress}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18.0,
                               fontWeight: FontWeight.bold,
@@ -73,17 +92,16 @@ class _PedestrianCrashDrawingWidgetState
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: Colors.white),
+                    icon: const Icon(Icons.close, color: Colors.white),
                     onPressed: () => Navigator.of(context).pop(),
                     tooltip: 'Close',
                   ),
                 ],
               ),
             ),
-
             // Instructions
             Container(
-              padding: EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
                 color: Colors.amber[50],
                 border: Border(bottom: BorderSide(color: Colors.amber[300]!)),
@@ -91,11 +109,15 @@ class _PedestrianCrashDrawingWidgetState
               child: Row(
                 children: [
                   Icon(Icons.info_outline, color: Colors.amber[900], size: 20),
-                  SizedBox(width: 8.0),
+                  const SizedBox(width: 8.0),
                   Expanded(
                     child: Text(
                       _isDrawing
-                          ? 'Click on the map to draw points. Double-click or press "Finish Drawing" when done.'
+                          ? 'Click on the map to draw points. Press "Finish Drawing" when done.'
+                          : _drawnPoints.isNotEmpty
+                          ? 'Project area loaded from a previous question. '
+                                'Press "Calculate Density" to reuse it, or '
+                                '"Clear & Restart" to draw a new area.'
                           : 'Press "Start Drawing" to draw the project area perimeter on the map.',
                       style: TextStyle(
                         fontSize: 13.0,
@@ -106,7 +128,6 @@ class _PedestrianCrashDrawingWidgetState
                 ],
               ),
             ),
-
             // Map
             Expanded(
               child: Stack(
@@ -120,39 +141,42 @@ class _PedestrianCrashDrawingWidgetState
                       onTap: _isDrawing ? _onMapTap : null,
                     ),
                     children: [
-                      // OpenStreetMap tiles
                       TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.app',
                       ),
-
-                      // Drawn polyline
+                      if (_drawnPoints.length >= 3)
+                        PolygonLayer(
+                          polygons: [
+                            Polygon(
+                              points: _drawnPoints,
+                              color: Colors.red.withOpacity(0.15),
+                              borderColor: Colors.red[700]!,
+                              borderStrokeWidth: 2.5,
+                              isFilled: true,
+                            ),
+                          ],
+                        ),
                       if (_drawnPoints.isNotEmpty)
                         PolylineLayer(
                           polylines: [
                             Polyline(
                               points: _drawnPoints,
                               color: Colors.red,
-                              // color: Colors.orange,
                               strokeWidth: 3.0,
                             ),
                           ],
                         ),
-
-                      // Drawn points markers
                       if (_drawnPoints.isNotEmpty)
                         MarkerLayer(
                           markers: _drawnPoints.asMap().entries.map((entry) {
-                            final idx = entry.key;
-                            final point = entry.value;
                             return Marker(
-                              point: point,
+                              point: entry.value,
                               width: 24,
                               height: 24,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  //color: Colors.orange,
                                   color: Colors.red,
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -162,8 +186,8 @@ class _PedestrianCrashDrawingWidgetState
                                 ),
                                 child: Center(
                                   child: Text(
-                                    '${idx + 1}',
-                                    style: TextStyle(
+                                    '${entry.key + 1}',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -174,15 +198,13 @@ class _PedestrianCrashDrawingWidgetState
                             );
                           }).toList(),
                         ),
-
-                      // Project address marker
                       MarkerLayer(
                         markers: [
                           Marker(
                             point: LatLng(widget.lat, widget.lon),
                             width: 40,
                             height: 40,
-                            child: Icon(
+                            child: const Icon(
                               Icons.location_on,
                               color: Colors.green,
                               size: 40,
@@ -192,18 +214,16 @@ class _PedestrianCrashDrawingWidgetState
                       ),
                     ],
                   ),
-
-                  // Loading overlay
                   if (_isCalculating)
                     Container(
                       color: Colors.black54,
                       child: Center(
                         child: Card(
                           child: Padding(
-                            padding: EdgeInsets.all(20.0),
+                            padding: const EdgeInsets.all(20.0),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
-                              children: [
+                              children: const [
                                 CircularProgressIndicator(),
                                 SizedBox(height: 16.0),
                                 Text('Calculating crash density...'),
@@ -216,11 +236,10 @@ class _PedestrianCrashDrawingWidgetState
                 ],
               ),
             ),
-
             // Error message
             if (_errorMessage != null)
               Container(
-                padding: EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
                   color: Colors.red[50],
                   border: Border(top: BorderSide(color: Colors.red[300]!)),
@@ -228,7 +247,7 @@ class _PedestrianCrashDrawingWidgetState
                 child: Row(
                   children: [
                     Icon(Icons.error_outline, color: Colors.red[900], size: 20),
-                    SizedBox(width: 8.0),
+                    const SizedBox(width: 8.0),
                     Expanded(
                       child: Text(
                         _errorMessage!,
@@ -239,16 +258,15 @@ class _PedestrianCrashDrawingWidgetState
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, size: 20),
+                      icon: const Icon(Icons.close, size: 20),
                       onPressed: () => setState(() => _errorMessage = null),
                     ),
                   ],
                 ),
               ),
-
             // Controls
             Container(
-              padding: EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 border: Border(top: BorderSide(color: Colors.grey[300]!)),
@@ -256,14 +274,12 @@ class _PedestrianCrashDrawingWidgetState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Stats
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStatItem(
                         'Points Drawn',
                         _drawnPoints.length.toString(),
-                        // Colors.orange[700]!,
                         Colors.blue[700]!,
                       ),
                       _buildStatItem(
@@ -281,38 +297,34 @@ class _PedestrianCrashDrawingWidgetState
                       ),
                     ],
                   ),
-                  SizedBox(height: 12.0),
-                  Divider(height: 1),
-                  SizedBox(height: 12.0),
-
-                  // Action buttons
+                  const SizedBox(height: 12.0),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       if (!_isDrawing && _drawnPoints.isEmpty)
                         ElevatedButton.icon(
-                          icon: Icon(Icons.draw, size: 18),
-                          label: Text('Start Drawing'),
+                          icon: const Icon(Icons.draw, size: 18),
+                          label: const Text('Start Drawing'),
                           style: ElevatedButton.styleFrom(
-                            // backgroundColor: Colors.orange[700],
                             backgroundColor: Colors.blue[700],
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 24.0,
                               vertical: 12.0,
                             ),
                           ),
                           onPressed: _startDrawing,
                         ),
-
                       if (_isDrawing) ...[
                         ElevatedButton.icon(
-                          icon: Icon(Icons.check, size: 18),
-                          label: Text('Finish Drawing'),
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('Finish Drawing'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green[700],
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 20.0,
                               vertical: 12.0,
                             ),
@@ -322,12 +334,12 @@ class _PedestrianCrashDrawingWidgetState
                               : null,
                         ),
                         ElevatedButton.icon(
-                          icon: Icon(Icons.undo, size: 18),
-                          label: Text('Undo Last'),
+                          icon: const Icon(Icons.undo, size: 18),
+                          label: const Text('Undo Last'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange[700],
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 20.0,
                               vertical: 12.0,
                             ),
@@ -337,15 +349,14 @@ class _PedestrianCrashDrawingWidgetState
                               : null,
                         ),
                       ],
-
                       if (!_isDrawing && _drawnPoints.isNotEmpty) ...[
                         ElevatedButton.icon(
-                          icon: Icon(Icons.calculate, size: 18),
-                          label: Text('Calculate Density'),
+                          icon: const Icon(Icons.calculate, size: 18),
+                          label: const Text('Calculate Density'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green[700],
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 20.0,
                               vertical: 12.0,
                             ),
@@ -353,12 +364,12 @@ class _PedestrianCrashDrawingWidgetState
                           onPressed: _calculateDensity,
                         ),
                         ElevatedButton.icon(
-                          icon: Icon(Icons.refresh, size: 18),
-                          label: Text('Clear & Restart'),
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('Clear & Restart'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red[700],
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 20.0,
                               vertical: 12.0,
                             ),
@@ -388,7 +399,7 @@ class _PedestrianCrashDrawingWidgetState
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
@@ -411,17 +422,13 @@ class _PedestrianCrashDrawingWidgetState
 
   void _onMapTap(TapPosition tapPosition, LatLng latLng) {
     if (_isDrawing) {
-      setState(() {
-        _drawnPoints.add(latLng);
-      });
+      setState(() => _drawnPoints.add(latLng));
     }
   }
 
   void _undoLastPoint() {
     if (_drawnPoints.isNotEmpty) {
-      setState(() {
-        _drawnPoints.removeLast();
-      });
+      setState(() => _drawnPoints.removeLast());
     }
   }
 
@@ -432,7 +439,6 @@ class _PedestrianCrashDrawingWidgetState
       });
       return;
     }
-
     setState(() {
       _isDrawing = false;
       _errorMessage = null;
@@ -454,29 +460,21 @@ class _PedestrianCrashDrawingWidgetState
       });
       return;
     }
-
     setState(() {
       _isCalculating = true;
       _errorMessage = null;
     });
-
     try {
-      // Convert LatLng to [lon, lat] format
       final polylinePoints = _drawnPoints
           .map((p) => [p.longitude, p.latitude])
           .toList();
-
-      // Calculate crashes within drawn area
       final result = await PedestrianCrashDrawingService.calculateFromPolyline(
         address: widget.matchedAddress,
         polylinePoints: polylinePoints,
       );
-
-      // Close this dialog
       if (mounted) {
+        widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));
         Navigator.of(context).pop();
-
-        // Call callback with result
         widget.onCalculationComplete(result);
       }
     } catch (e) {

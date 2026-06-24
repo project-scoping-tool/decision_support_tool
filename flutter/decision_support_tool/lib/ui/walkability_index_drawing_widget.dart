@@ -3,14 +3,19 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:decision_support_tool/services/walkability_index_drawing_service.dart';
 
-/// Interactive widget for drawing a polygon and calculating the National
-/// Walkability Index from the EPA WalkabilityIndex MapServer Layer 0.
-/// Mirrors the pattern of [LandUseDiversityDrawingWidget].
+/// Interactive widget for drawing a polygon and calculating the EPA National
+/// Walkability Index. Mirrors the pattern of [BikingRateDrawingWidget].
 class WalkabilityIndexDrawingWidget extends StatefulWidget {
   final double lat;
   final double lon;
   final String matchedAddress;
   final Function(WalkabilityIndexDrawingResult) onCalculationComplete;
+
+  /// Optional: pre-populate with a previously drawn polygon.
+  final List<LatLng>? initialPoints;
+
+  /// Optional callback invoked with the final polygon before the widget closes.
+  final Function(List<LatLng>)? onPolygonSaved;
 
   const WalkabilityIndexDrawingWidget({
     Key? key,
@@ -18,6 +23,8 @@ class WalkabilityIndexDrawingWidget extends StatefulWidget {
     required this.lon,
     required this.matchedAddress,
     required this.onCalculationComplete,
+    this.initialPoints,
+    this.onPolygonSaved,
   }) : super(key: key);
 
   @override
@@ -27,10 +34,18 @@ class WalkabilityIndexDrawingWidget extends StatefulWidget {
 
 class _WalkabilityIndexDrawingWidgetState
     extends State<WalkabilityIndexDrawingWidget> {
-  final List<LatLng> _drawnPoints = [];
+  late final List<LatLng> _drawnPoints;
   bool _isDrawing = false;
   bool _isCalculating = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _drawnPoints = widget.initialPoints != null
+        ? List<LatLng>.from(widget.initialPoints!)
+        : [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,14 +59,13 @@ class _WalkabilityIndexDrawingWidgetState
         height: screenHeight * 0.9,
         child: Column(
           children: [
-            // ── Header ──────────────────────────────────────────────────────────
+            // ── Header ────────────────────────────────────────────────────────
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
                 vertical: 12.0,
               ),
               decoration: BoxDecoration(
-                // color: Colors.teal[700],
                 color: Colors.blue[700],
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(4.0),
@@ -63,15 +77,11 @@ class _WalkabilityIndexDrawingWidgetState
                   Expanded(
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.directions_walk,
-                          color: Colors.white,
-                          size: 24.0,
-                        ),
+                        const Icon(Icons.draw, color: Colors.white, size: 24.0),
                         const SizedBox(width: 10.0),
                         Expanded(
                           child: Text(
-                            'Draw Project Area – ${widget.matchedAddress}',
+                            'Draw Project Area \u2013 ${widget.matchedAddress}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18.0,
@@ -92,7 +102,7 @@ class _WalkabilityIndexDrawingWidgetState
               ),
             ),
 
-            // ── Instruction banner ───────────────────────────────────────────────
+            // ── Instruction banner ─────────────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
@@ -109,9 +119,13 @@ class _WalkabilityIndexDrawingWidgetState
                           ? 'Click on the map to add polygon vertices. '
                                 'Press "Finish Drawing" when the area is enclosed '
                                 '(minimum 3 points).'
+                          : _drawnPoints.isNotEmpty
+                          ? 'Project area loaded from a previous question. '
+                                'Press "Calculate Walkability Score" to reuse it, '
+                                'or "Clear & Restart" to draw a new area.'
                           : 'Press "Start Drawing" to outline the project area. '
-                                'The tool will query the EPA National Walkability Index '
-                                'and calculate the score automatically.',
+                                'The tool will query the EPA National Walkability '
+                                'Index and calculate the score automatically.',
                       style: TextStyle(
                         fontSize: 13.0,
                         color: Colors.amber[900],
@@ -122,7 +136,7 @@ class _WalkabilityIndexDrawingWidgetState
               ),
             ),
 
-            // ── Map ──────────────────────────────────────────────────────────────
+            // ── Map ───────────────────────────────────────────────────────────
             Expanded(
               child: Stack(
                 children: [
@@ -140,37 +154,28 @@ class _WalkabilityIndexDrawingWidgetState
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.app',
                       ),
-
-                      // Drawn polygon fill + outline
                       if (_drawnPoints.length >= 3)
                         PolygonLayer(
                           polygons: [
                             Polygon(
                               points: _drawnPoints,
-                              // color: Colors.teal.withOpacity(0.15),
                               color: Colors.red.withOpacity(0.15),
-                              // borderColor: Colors.teal[700]!,
                               borderColor: Colors.red[700]!,
                               borderStrokeWidth: 2.5,
                               isFilled: true,
                             ),
                           ],
                         ),
-
-                      // Polyline connecting vertices
                       if (_drawnPoints.isNotEmpty)
                         PolylineLayer(
                           polylines: [
                             Polyline(
                               points: _drawnPoints,
-                              // color: Colors.teal[900]!,
                               color: Colors.red[900]!,
                               strokeWidth: 3.0,
                             ),
                           ],
                         ),
-
-                      // Vertex markers with index numbers
                       if (_drawnPoints.isNotEmpty)
                         MarkerLayer(
                           markers: _drawnPoints.asMap().entries.map((entry) {
@@ -180,7 +185,6 @@ class _WalkabilityIndexDrawingWidgetState
                               height: 24,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  // color: Colors.teal[700],
                                   color: Colors.red[700],
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -202,8 +206,6 @@ class _WalkabilityIndexDrawingWidgetState
                             );
                           }).toList(),
                         ),
-
-                      // Project address marker
                       MarkerLayer(
                         markers: [
                           Marker(
@@ -212,7 +214,7 @@ class _WalkabilityIndexDrawingWidgetState
                             height: 40,
                             child: const Icon(
                               Icons.location_on,
-                              color: Colors.red,
+                              color: Colors.green,
                               size: 40,
                             ),
                           ),
@@ -220,26 +222,33 @@ class _WalkabilityIndexDrawingWidgetState
                       ),
                     ],
                   ),
-
-                  // Loading overlay
                   if (_isCalculating)
                     Container(
-                      color: Colors.black.withOpacity(0.4),
-                      child: const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(color: Colors.white),
-                            SizedBox(height: 16),
-                            Text(
-                              'Querying EPA Walkability Index…',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      color: Colors.black54,
+                      child: Center(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 16.0),
+                                Text(
+                                  'Querying EPA Walkability Index\u2026',
+                                  style: TextStyle(fontSize: 15.0),
+                                ),
+                                SizedBox(height: 6.0),
+                                Text(
+                                  'This may take a few seconds.',
+                                  style: TextStyle(
+                                    fontSize: 12.0,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -247,36 +256,66 @@ class _WalkabilityIndexDrawingWidgetState
               ),
             ),
 
-            // ── Bottom controls panel ────────────────────────────────────────────
+            // ── Error banner ───────────────────────────────────────────────────
+            if (_errorMessage != null)
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  border: Border(top: BorderSide(color: Colors.red[300]!)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red[900], size: 20),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          color: Colors.red[900],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // ── Bottom controls ────────────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 border: Border(top: BorderSide(color: Colors.grey[300]!)),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Point count info
-                  Text(
-                    'Points drawn: ${_drawnPoints.length}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildStatItem(
+                        'Vertices',
+                        _drawnPoints.length.toString(),
+                        Colors.blue[700]!,
+                      ),
+                      _buildStatItem(
+                        'Status',
+                        _isDrawing
+                            ? 'Drawing\u2026'
+                            : _drawnPoints.isEmpty
+                            ? 'Not Started'
+                            : 'Ready',
+                        _isDrawing
+                            ? Colors.orange[700]!
+                            : _drawnPoints.isEmpty
+                            ? Colors.grey[700]!
+                            : Colors.green[700]!,
+                      ),
+                    ],
                   ),
-
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red[700], fontSize: 13.0),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-
                   const SizedBox(height: 12.0),
                   const Divider(height: 1),
                   const SizedBox(height: 12.0),
-
-                  // Action buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -285,7 +324,6 @@ class _WalkabilityIndexDrawingWidgetState
                           icon: const Icon(Icons.draw, size: 18),
                           label: const Text('Start Drawing'),
                           style: ElevatedButton.styleFrom(
-                            // backgroundColor: Colors.teal[700],
                             backgroundColor: Colors.blue[700],
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
@@ -295,7 +333,6 @@ class _WalkabilityIndexDrawingWidgetState
                           ),
                           onPressed: _startDrawing,
                         ),
-
                       if (_isDrawing) ...[
                         ElevatedButton.icon(
                           icon: const Icon(Icons.check, size: 18),
@@ -328,21 +365,19 @@ class _WalkabilityIndexDrawingWidgetState
                               : null,
                         ),
                       ],
-
                       if (!_isDrawing && _drawnPoints.isNotEmpty) ...[
                         ElevatedButton.icon(
-                          icon: const Icon(Icons.calculate, size: 18),
+                          icon: const Icon(Icons.directions_walk, size: 18),
                           label: const Text('Calculate Walkability Score'),
                           style: ElevatedButton.styleFrom(
-                            // backgroundColor: Colors.teal[800],
-                            backgroundColor: Colors.green[700],
+                            backgroundColor: Colors.teal[700],
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20.0,
                               vertical: 12.0,
                             ),
                           ),
-                          onPressed: _calculateWalkabilityIndex,
+                          onPressed: _calculateWalkabilityScore,
                         ),
                         ElevatedButton.icon(
                           icon: const Icon(Icons.refresh, size: 18),
@@ -369,7 +404,33 @@ class _WalkabilityIndexDrawingWidgetState
     );
   }
 
-  // ── State actions ──────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── State actions ─────────────────────────────────────────────────────────────
 
   void _startDrawing() {
     setState(() {
@@ -412,21 +473,18 @@ class _WalkabilityIndexDrawingWidgetState
     });
   }
 
-  Future<void> _calculateWalkabilityIndex() async {
+  Future<void> _calculateWalkabilityScore() async {
     if (_drawnPoints.length < 3) {
       setState(() {
         _errorMessage = 'Please draw at least 3 points to form an area.';
       });
       return;
     }
-
     setState(() {
       _isCalculating = true;
       _errorMessage = null;
     });
-
     try {
-      // Convert LatLng list to [lon, lat] pairs; close the polygon ring
       final polygonPoints = _drawnPoints
           .map((p) => [p.longitude, p.latitude])
           .toList();
@@ -438,12 +496,13 @@ class _WalkabilityIndexDrawingWidgetState
       );
 
       if (mounted) {
+        widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));
         Navigator.of(context).pop();
         widget.onCalculationComplete(result);
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error calculating walkability index: $e';
+        _errorMessage = 'Error calculating walkability score: $e';
         _isCalculating = false;
       });
     }

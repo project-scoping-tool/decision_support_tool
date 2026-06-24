@@ -12,12 +12,20 @@ class LandUseDiversityDrawingWidget extends StatefulWidget {
   final String matchedAddress;
   final Function(LandUseDiversityDrawingResult) onCalculationComplete;
 
+  /// Optional: pre-populate with a previously drawn polygon.
+  final List<LatLng>? initialPoints;
+
+  /// Optional callback invoked with the final polygon before the widget closes.
+  final Function(List<LatLng>)? onPolygonSaved;
+
   const LandUseDiversityDrawingWidget({
     Key? key,
     required this.lat,
     required this.lon,
     required this.matchedAddress,
     required this.onCalculationComplete,
+    this.initialPoints,
+    this.onPolygonSaved,
   }) : super(key: key);
 
   @override
@@ -27,10 +35,18 @@ class LandUseDiversityDrawingWidget extends StatefulWidget {
 
 class _LandUseDiversityDrawingWidgetState
     extends State<LandUseDiversityDrawingWidget> {
-  final List<LatLng> _drawnPoints = [];
+  late final List<LatLng> _drawnPoints;
   bool _isDrawing = false;
   bool _isCalculating = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _drawnPoints = widget.initialPoints != null
+        ? List<LatLng>.from(widget.initialPoints!)
+        : [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +244,7 @@ class _LandUseDiversityDrawingWidgetState
                             CircularProgressIndicator(color: Colors.white),
                             SizedBox(height: 16.0),
                             Text(
-                              'Querying EPA Smart Location Database…',
+                              'Querying EPA Smart Location Databaseâ€¦',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16.0,
@@ -475,6 +491,7 @@ class _LandUseDiversityDrawingWidgetState
       );
 
       if (mounted) {
+        widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));
         Navigator.of(context).pop();
         widget.onCalculationComplete(result);
       }

@@ -989,18 +989,20 @@ class BikingRateDrawingService {
   // ── DST buckets ───────────────────────────────────────────────────────────
 
   static Map<String, dynamic> _getDstBucket(double rate) {
-    if (rate <= 0.4) return {'bucket': '0-0.4%', 'points': 1.0};
-    if (rate <= 1.5) return {'bucket': '0.5-1.5%', 'points': 2.0};
-    if (rate <= 3.3) return {'bucket': '1.6-3.3%', 'points': 3.0};
-    if (rate <= 6.1) return {'bucket': '3.4-6.1%', 'points': 4.0};
+    final r = double.parse(rate.toStringAsFixed(1));
+    if (r <= 0.4) return {'bucket': '0-0.4%', 'points': 1.0};
+    if (r <= 1.5) return {'bucket': '0.5-1.5%', 'points': 2.0};
+    if (r <= 3.3) return {'bucket': '1.6-3.3%', 'points': 3.0};
+    if (r <= 6.1) return {'bucket': '3.4-6.1%', 'points': 4.0};
     return {'bucket': '6.2-11.5%', 'points': 5.0};
   }
 
   static String _getAnswerFromRate(double rate) {
-    if (rate <= 0.4) return '0-0.4%';
-    if (rate <= 1.5) return '0.5-1.5%';
-    if (rate <= 3.3) return '1.6-3.3%';
-    if (rate <= 6.1) return '3.4-6.1%';
+    final r = double.parse(rate.toStringAsFixed(1));
+    if (r <= 0.4) return '0-0.4%';
+    if (r <= 1.5) return '0.5-1.5%';
+    if (r <= 3.3) return '1.6-3.3%';
+    if (r <= 6.1) return '3.4-6.1%';
     return '6.2-11.5%';
   }
 

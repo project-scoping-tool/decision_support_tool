@@ -3,14 +3,20 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:decision_support_tool/services/activity_density_drawing_service.dart';
 
-/// Interactive widget for drawing a polygon and calculating the activity
-/// density (housing units + jobs per acre) from EPA SLD Layer 4.
-/// Mirrors the pattern of [LandUseDiversityDrawingWidget].
+/// Interactive widget for drawing a polygon and calculating activity density
+/// from the EPA Smart Location Database. Mirrors the pattern of
+/// [BikingRateDrawingWidget].
 class ActivityDensityDrawingWidget extends StatefulWidget {
   final double lat;
   final double lon;
   final String matchedAddress;
   final Function(ActivityDensityDrawingResult) onCalculationComplete;
+
+  /// Optional: pre-populate with a previously drawn polygon.
+  final List<LatLng>? initialPoints;
+
+  /// Optional callback invoked with the final polygon before the widget closes.
+  final Function(List<LatLng>)? onPolygonSaved;
 
   const ActivityDensityDrawingWidget({
     Key? key,
@@ -18,6 +24,8 @@ class ActivityDensityDrawingWidget extends StatefulWidget {
     required this.lon,
     required this.matchedAddress,
     required this.onCalculationComplete,
+    this.initialPoints,
+    this.onPolygonSaved,
   }) : super(key: key);
 
   @override
@@ -27,10 +35,18 @@ class ActivityDensityDrawingWidget extends StatefulWidget {
 
 class _ActivityDensityDrawingWidgetState
     extends State<ActivityDensityDrawingWidget> {
-  final List<LatLng> _drawnPoints = [];
+  late final List<LatLng> _drawnPoints;
   bool _isDrawing = false;
   bool _isCalculating = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _drawnPoints = widget.initialPoints != null
+        ? List<LatLng>.from(widget.initialPoints!)
+        : [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +120,13 @@ class _ActivityDensityDrawingWidgetState
                           ? 'Click on the map to add polygon vertices. '
                                 'Press "Finish Drawing" when the area is enclosed '
                                 '(minimum 3 points).'
+                          : _drawnPoints.isNotEmpty
+                          ? 'Project area loaded from a previous question. '
+                                'Press "Calculate Activity Density" to reuse it, '
+                                'or "Clear & Restart" to draw a new area.'
                           : 'Press "Start Drawing" to outline the project area. '
                                 'The tool will query the EPA Smart Location Database '
-                                'and calculate the activity density (housing units + jobs per acre) automatically.',
+                                'and calculate the activity density automatically.',
                       style: TextStyle(
                         fontSize: 13.0,
                         color: Colors.amber[900],
@@ -135,8 +155,6 @@ class _ActivityDensityDrawingWidgetState
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.app',
                       ),
-
-                      // Drawn polygon fill + outline
                       if (_drawnPoints.length >= 3)
                         PolygonLayer(
                           polygons: [
@@ -149,8 +167,6 @@ class _ActivityDensityDrawingWidgetState
                             ),
                           ],
                         ),
-
-                      // Polyline connecting vertices
                       if (_drawnPoints.isNotEmpty)
                         PolylineLayer(
                           polylines: [
@@ -161,8 +177,6 @@ class _ActivityDensityDrawingWidgetState
                             ),
                           ],
                         ),
-
-                      // Vertex markers with index numbers
                       if (_drawnPoints.isNotEmpty)
                         MarkerLayer(
                           markers: _drawnPoints.asMap().entries.map((entry) {
@@ -193,8 +207,6 @@ class _ActivityDensityDrawingWidgetState
                             );
                           }).toList(),
                         ),
-
-                      // Project address marker
                       MarkerLayer(
                         markers: [
                           Marker(
@@ -211,34 +223,33 @@ class _ActivityDensityDrawingWidgetState
                       ),
                     ],
                   ),
-
-                  // Calculating overlay
                   if (_isCalculating)
                     Container(
-                      color: Colors.black.withOpacity(0.4),
-                      child: const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(color: Colors.white),
-                            SizedBox(height: 16.0),
-                            Text(
-                              'Querying EPA Smart Location Database…',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.w600,
-                              ),
+                      color: Colors.black54,
+                      child: Center(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 16.0),
+                                Text(
+                                  'Querying EPA Smart Location Database…',
+                                  style: TextStyle(fontSize: 15.0),
+                                ),
+                                SizedBox(height: 6.0),
+                                Text(
+                                  'This may take a few seconds.',
+                                  style: TextStyle(
+                                    fontSize: 12.0,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 6.0),
-                            Text(
-                              'This may take a few seconds.',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13.0,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -248,42 +259,39 @@ class _ActivityDensityDrawingWidgetState
 
             // ── Bottom control panel ────────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 border: Border(top: BorderSide(color: Colors.grey[300]!)),
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Point count + error feedback
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStatItem(
-                        'Points drawn',
+                        'Vertices',
                         _drawnPoints.length.toString(),
-                        _drawnPoints.length >= 3
-                            ? Colors.green[700]!
-                            : Colors.grey[700]!,
+                        Colors.blue[700]!,
+                      ),
+                      _buildStatItem(
+                        'Status',
+                        _isDrawing
+                            ? 'Drawing\u2026'
+                            : _drawnPoints.isEmpty
+                            ? 'Not Started'
+                            : 'Ready',
+                        _isDrawing
+                            ? Colors.orange[700]!
+                            : _drawnPoints.isEmpty
+                            ? Colors.grey[700]!
+                            : Colors.green[700]!,
                       ),
                     ],
                   ),
-
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 8.0),
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red[700], fontSize: 13.0),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-
                   const SizedBox(height: 12.0),
                   const Divider(height: 1),
                   const SizedBox(height: 12.0),
-
-                  // Action buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -301,7 +309,6 @@ class _ActivityDensityDrawingWidgetState
                           ),
                           onPressed: _startDrawing,
                         ),
-
                       if (_isDrawing) ...[
                         ElevatedButton.icon(
                           icon: const Icon(Icons.check, size: 18),
@@ -334,13 +341,12 @@ class _ActivityDensityDrawingWidgetState
                               : null,
                         ),
                       ],
-
                       if (!_isDrawing && _drawnPoints.isNotEmpty) ...[
                         ElevatedButton.icon(
-                          icon: const Icon(Icons.calculate, size: 18),
+                          icon: const Icon(Icons.apartment, size: 18),
                           label: const Text('Calculate Activity Density'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[800],
+                            backgroundColor: Colors.teal[700],
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20.0,
@@ -450,14 +456,11 @@ class _ActivityDensityDrawingWidgetState
       });
       return;
     }
-
     setState(() {
       _isCalculating = true;
       _errorMessage = null;
     });
-
     try {
-      // Convert LatLng list to [lon, lat] pairs; close the polygon ring
       final polygonPoints = _drawnPoints
           .map((p) => [p.longitude, p.latitude])
           .toList();
@@ -469,6 +472,7 @@ class _ActivityDensityDrawingWidgetState
       );
 
       if (mounted) {
+        widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));
         Navigator.of(context).pop();
         widget.onCalculationComplete(result);
       }

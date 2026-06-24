@@ -11,12 +11,23 @@ class BikingRateDrawingWidget extends StatefulWidget {
   final String matchedAddress;
   final Function(BikingRateDrawingResult) onCalculationComplete;
 
+  /// Optional: pre-populate with a previously drawn polygon so the user can
+  /// skip straight to calculation without redrawing.
+  final List<LatLng>? initialPoints;
+
+  /// Optional callback invoked with the final polygon points just before the
+  /// widget closes on a successful calculation. The parent can save these to
+  /// offer reuse for subsequent questions.
+  final Function(List<LatLng>)? onPolygonSaved;
+
   const BikingRateDrawingWidget({
     Key? key,
     required this.lat,
     required this.lon,
     required this.matchedAddress,
     required this.onCalculationComplete,
+    this.initialPoints,
+    this.onPolygonSaved,
   }) : super(key: key);
 
   @override
@@ -25,10 +36,19 @@ class BikingRateDrawingWidget extends StatefulWidget {
 }
 
 class _BikingRateDrawingWidgetState extends State<BikingRateDrawingWidget> {
-  final List<LatLng> _drawnPoints = [];
+  late final List<LatLng> _drawnPoints;
   bool _isDrawing = false;
   bool _isCalculating = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed with saved polygon if provided so user can skip redrawing.
+    _drawnPoints = widget.initialPoints != null
+        ? List<LatLng>.from(widget.initialPoints!)
+        : [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -219,56 +239,32 @@ class _BikingRateDrawingWidgetState extends State<BikingRateDrawingWidget> {
                   // Loading overlay
                   if (_isCalculating)
                     Container(
-                      color: Colors.black.withOpacity(0.4),
-                      child: const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(color: Colors.white),
-                            SizedBox(height: 16.0),
-                            Text(
-                              'Fetching Census Tracts & rates…',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.w600,
-                              ),
+                      color: Colors.black54,
+                      child: Center(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 16.0),
+                                const Text(
+                                  'Fetching Census Tracts & rates…',
+                                  style: TextStyle(fontSize: 15.0),
+                                ),
+                                const SizedBox(height: 6.0),
+                                Text(
+                                  'This may take a few seconds.',
+                                  style: TextStyle(
+                                    fontSize: 12.0,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 6.0),
-                            Text(
-                              'This may take a few seconds.',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13.0,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-
-                        // child: Card(
-                        //   child: Padding(
-                        //     padding: const EdgeInsets.all(24.0),
-                        //     child: Column(
-                        //       mainAxisSize: MainAxisSize.min,
-                        //       children: [
-                        //         const CircularProgressIndicator(),
-                        //         const SizedBox(height: 16.0),
-                        //         const Text(
-                        //           'Fetching Census Tracts & rates…',
-                        //           style: TextStyle(fontSize: 15.0),
-                        //         ),
-                        //         const SizedBox(height: 6.0),
-                        //         Text(
-                        //           'This may take a few seconds.',
-                        //           style: TextStyle(
-                        //             color: Colors.white70,
-                        //             fontSize: 13.0,
-                        //           ),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ),
                       ),
                     ),
                 ],
@@ -525,6 +521,8 @@ class _BikingRateDrawingWidgetState extends State<BikingRateDrawingWidget> {
       );
 
       if (mounted) {
+        // Notify parent with the drawn polygon before closing.
+        widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));
         Navigator.of(context).pop();
         widget.onCalculationComplete(result);
       }

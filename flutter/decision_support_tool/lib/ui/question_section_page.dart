@@ -43,6 +43,9 @@ import 'package:decision_support_tool/ui/walkability_index_drawing_widget.dart';
 import 'package:decision_support_tool/ui/walkability_index_map_widget.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart' show InteractiveFlag;
+import 'package:decision_support_tool/ui/project_area_reuse_dialog.dart';
 
 // Helper class for bicycle crash map data (matches BicycleCrashMapWidget expectations)
 class BicycleCrashMapData {
@@ -149,6 +152,11 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
   /// Store the last walkability drawing result for map display
   WalkabilityIndexDrawingResult? _lastWalkabilityResult;
+
+  /// Saved project area polygon shared across all drawing-based questions.
+  /// Set after the first successful polygon calculation and offered for reuse
+  /// on subsequent questions.
+  List<LatLng>? _savedProjectPolygon;
 
   QuestionSectionViewModel get _viewModel => widget.viewModel;
   String get _jurisdiction => widget.viewModel.assessmentInfo.jurisdiction;
@@ -367,22 +375,19 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       padding: EdgeInsets.symmetric(horizontal: _screenWidth * 0.03),
       child: ColoredBox(
         color: backgroundColor,
-        // child: ClipRect(
-        //   child: IntrinsicHeight(
-        child: Row(
-          //crossAxisAlignment: CrossAxisAlignment.stretch,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildWidgetQuestionCell1(questionIndex),
-            Container(width: 3.0, color: Colors.white),
-            _buildWidgetQuestionCell2(questionIndex),
-            Container(width: 3.0, color: Colors.white),
-            _buildWidgetQuestionCell3(questionIndex),
-          ],
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildWidgetQuestionCell1(questionIndex),
+              Container(width: 3.0, color: Colors.white),
+              _buildWidgetQuestionCell2(questionIndex),
+              Container(width: 3.0, color: Colors.white),
+              _buildWidgetQuestionCell3(questionIndex),
+            ],
+          ),
         ),
       ),
-      //   ),
-      // ),
     );
   }
 
@@ -397,9 +402,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       ),
       width: _screenWidth * 0.94 * 0.8 - 6.0,
       child: Column(
-        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        mainAxisAlignment: MainAxisAlignment.start,
-        // mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           // Question text
           Align(
@@ -1683,6 +1686,26 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
+  /// If a project polygon has been drawn before, shows a small dialog asking
+  /// whether to reuse it or draw a new one. Returns the points to pre-populate
+  /// (null = open draw widget with blank slate).
+  Future<List<LatLng>?> _askReuseOrDraw({
+    required double lat,
+    required double lon,
+  }) async {
+    if (_savedProjectPolygon == null || _savedProjectPolygon!.length < 3) {
+      return null; // No saved polygon – go straight to blank draw widget.
+    }
+    if (!mounted) return null;
+    final choice = await showProjectAreaReuseDialog(
+      context: context,
+      savedPoints: _savedProjectPolygon!,
+      lat: lat,
+      lon: lon,
+    );
+    return choice.reuse ? choice.points : null;
+  }
+
   /// Geocodes a plain-text address via ArcGIS and returns (lon, lat).
   /// Throws an [Exception] if the address cannot be resolved.
   Future<({double lon, double lat})> _geocodeAddress(String address) async {
@@ -1725,6 +1748,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       _viewModel.setFetchingParksData(true);
       final (:lon, :lat) = await _geocodeAddress(address);
       _viewModel.setFetchingParksData(false);
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -1732,6 +1756,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lat: lat,
           lon: lon,
           matchedAddress: address,
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             _handleWalkabilityResult(result, questionIndex);
           },
@@ -1851,6 +1877,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       _viewModel.setFetchingParksData(true);
       final (:lon, :lat) = await _geocodeAddress(address);
       _viewModel.setFetchingParksData(false);
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -1858,6 +1885,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lat: lat,
           lon: lon,
           matchedAddress: address,
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             _handleActivityDensityResult(result, questionIndex);
           },
@@ -1981,6 +2010,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       // âœ… Use `address` (what the user typed) â€“ NOT ArcGIS canonical.
       // This ensures the dialog title always shows the user's entered address.
       _viewModel.setFetchingParksData(false);
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -1989,6 +2019,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lon: lon,
           matchedAddress:
               address, // â† user-typed address, not ArcGIS canonical
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             _handleLandUseDiversityResult(result, questionIndex);
           },
@@ -2113,6 +2145,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
       _viewModel.setFetchingParksData(false);
 
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -2121,6 +2154,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lon: lon,
           matchedAddress:
               address, // â† user-typed address, not ArcGIS canonical
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             _handleWalkingRateResult(result, questionIndex);
           },
@@ -2251,6 +2286,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
       _viewModel.setFetchingParksData(false);
 
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -2259,6 +2295,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lon: lon,
           matchedAddress:
               address, // â† user-typed address, not ArcGIS canonical
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             _handleBikingRateResult(result, questionIndex);
           },
@@ -2288,6 +2326,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       _viewModel.setFetchingParksData(false);
 
       // Open drawing dialog
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -2295,6 +2334,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lat: lat,
           lon: lon,
           matchedAddress: matched,
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             // Handle the calculation result
             _handlePedestrianCrashResult(result, questionIndex);
@@ -2325,6 +2366,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       _viewModel.setFetchingParksData(false);
 
       // Open drawing dialog
+      final initialPoints = await _askReuseOrDraw(lat: lat, lon: lon);
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -2332,6 +2374,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           lat: lat,
           lon: lon,
           matchedAddress: matched,
+          initialPoints: initialPoints,
+          onPolygonSaved: (pts) => setState(() => _savedProjectPolygon = pts),
           onCalculationComplete: (result) {
             // Handle the calculation result
             _handleBicycleCrashResult(result, questionIndex);
