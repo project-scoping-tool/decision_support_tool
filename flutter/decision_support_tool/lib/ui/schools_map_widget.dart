@@ -54,6 +54,45 @@ class SchoolsMapWidget extends StatelessWidget {
       }
 
       // Handle polygon geometry (campus areas)
+      //   if (geometry.containsKey('rings')) {
+      //     final rings = geometry['rings'] as List;
+      //     if (rings.isNotEmpty) {
+      //       final ring = rings[0] as List;
+      //       final points = <LatLng>[];
+      //       for (final coord in ring) {
+      //         if (coord is List && coord.length >= 2) {
+      //           points.add(LatLng(coord[1], coord[0]));
+      //         }
+      //       }
+      //       if (points.isNotEmpty) {
+      //         schoolPolygons.add(
+      //           Polygon(
+      //             points: points,
+      //             color: Colors.purple.withOpacity(0.15),
+      //             borderColor: Colors.purple[700]!,
+      //             borderStrokeWidth: 2.0,
+      //             label: attributes['NAME']?.toString() ?? 'School',
+      //             labelStyle: TextStyle(
+      //               color: Colors.black,
+      //               fontSize: 12.0,
+      //               backgroundColor: Colors.white.withOpacity(0.8),
+      //             ),
+      //           ),
+      //         );
+      //       }
+      //     }
+      //     // Handle point geometry (school locations)
+      //   } else if (geometry.containsKey('x') && geometry.containsKey('y')) {
+      //     schoolMarkers.add(
+      //       Marker(
+      //         point: LatLng(geometry['y'], geometry['x']),
+      //         width: 40,
+      //         height: 40,
+      //         child: Icon(Icons.school, color: Colors.purple[700], size: 30),
+      //       ),
+      //     );
+      //   }
+      // }
       if (geometry.containsKey('rings')) {
         final rings = geometry['rings'] as List;
         if (rings.isNotEmpty) {

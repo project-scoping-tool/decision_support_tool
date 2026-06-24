@@ -257,3 +257,112 @@ class SchoolsMapService {
     }
   }
 }
+
+// import 'dart:convert';
+// import 'dart:math' as math;
+// import 'package:flutter/services.dart' show rootBundle;
+
+// class SchoolsMapData {
+//   final double lon;
+//   final double lat;
+//   final String matchedAddress;
+//   final List<Map<String, dynamic>> schoolFeatures;
+//   final int layerId;
+
+//   SchoolsMapData({
+//     required this.lon,
+//     required this.lat,
+//     required this.matchedAddress,
+//     required this.schoolFeatures,
+//     required this.layerId,
+//   });
+// }
+
+// class SchoolsMapService {
+//   static const String _assetPath = 'assets/data/clark_county_schools.json';
+//   static const double _bufferMiles = 0.5;
+
+//   static List<Map<String, dynamic>>? _cachedFeatures;
+
+//   static Future<SchoolsMapData> getMapData({
+//     required double lon,
+//     required double lat,
+//     required String matchedAddress,
+//     required int layerId,
+//   }) async {
+//     final features = await _loadLocalData();
+
+//     final result = <Map<String, dynamic>>[];
+//     for (final f in features) {
+//       final flon = (f['lon'] as num).toDouble();
+//       final flat = (f['lat'] as num).toDouble();
+//       if (_distanceMiles(lat, lon, flat, flon) > _bufferMiles) continue;
+
+//       final type = f['type'] as String;
+//       final attrs = {
+//         'NAME': f['name'],
+//         ...(f['attributes'] as Map<String, dynamic>? ?? {}),
+//       };
+
+//       if (type == 'Polygon') {
+//         // Boundary polygon
+//         result.add({
+//           'geometry': {'rings': f['rings']},
+//           'attributes': attrs,
+//         });
+//         // Icon marker at centroid, inside the polygon
+//         result.add({
+//           'geometry': {'x': flon, 'y': flat},
+//           'attributes': attrs,
+//         });
+//       } else {
+//         // Point-only school: just the icon
+//         result.add({
+//           'geometry': {'x': flon, 'y': flat},
+//           'attributes': attrs,
+//         });
+//       }
+//     }
+
+//     return SchoolsMapData(
+//       lon: lon,
+//       lat: lat,
+//       matchedAddress: matchedAddress,
+//       schoolFeatures: result,
+//       layerId: layerId,
+//     );
+//   }
+
+//   static Future<List<Map<String, dynamic>>> _loadLocalData() async {
+//     if (_cachedFeatures != null) return _cachedFeatures!;
+//     final jsonString = await rootBundle.loadString(_assetPath);
+//     final data = jsonDecode(jsonString) as Map<String, dynamic>;
+//     _cachedFeatures = (data['features'] as List).cast<Map<String, dynamic>>();
+//     return _cachedFeatures!;
+//   }
+
+//   static double _distanceMiles(
+//     double lat1,
+//     double lon1,
+//     double lat2,
+//     double lon2,
+//   ) {
+//     const earthRadiusMiles = 3958.8;
+//     final dLat = _deg2rad(lat2 - lat1);
+//     final dLon = _deg2rad(lon2 - lon1);
+//     final a =
+//         math.sin(dLat / 2) * math.sin(dLat / 2) +
+//         math.cos(_deg2rad(lat1)) *
+//             math.cos(_deg2rad(lat2)) *
+//             math.sin(dLon / 2) *
+//             math.sin(dLon / 2);
+//     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+//     return earthRadiusMiles * c;
+//   }
+
+//   static double _deg2rad(double deg) => deg * (math.pi / 180.0);
+
+//   static void clearCache() {
+//     _cachedFeatures = null;
+//   }
+// }

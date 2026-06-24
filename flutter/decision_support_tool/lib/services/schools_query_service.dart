@@ -372,3 +372,137 @@ class SchoolsQueryService {
     }
   }
 }
+
+// import 'dart:convert';
+// import 'dart:math' as math;
+// import 'package:flutter/services.dart' show rootBundle;
+// import 'package:http/http.dart' as http;
+
+// class SchoolsQueryResult {
+//   final int count;
+//   final String matchedAddress;
+//   final double lon;
+//   final double lat;
+//   final String answer;
+//   final int layerId; // kept for API compatibility; unused locally
+
+//   SchoolsQueryResult({
+//     required this.count,
+//     required this.matchedAddress,
+//     required this.lon,
+//     required this.lat,
+//     required this.answer,
+//     required this.layerId,
+//   });
+// }
+
+// class SchoolsQueryService {
+//   static const String _assetPath = 'assets/data/clark_county_schools.json';
+//   static const double _bufferMiles = 0.5;
+
+//   static List<Map<String, dynamic>>? _cachedFeatures;
+
+//   static Future<SchoolsQueryResult> countSchoolsNearAddress(
+//     String address,
+//   ) async {
+//     final geocodeResult = await _geocodeAddress(address);
+//     final lon = geocodeResult['lon'] as double;
+//     final lat = geocodeResult['lat'] as double;
+//     final matched = geocodeResult['matched'] as String;
+
+//     final features = await _loadLocalData();
+
+//     int count = 0;
+//     for (final f in features) {
+//       final flon = (f['lon'] as num).toDouble();
+//       final flat = (f['lat'] as num).toDouble();
+//       if (_distanceMiles(lat, lon, flat, flon) <= _bufferMiles) {
+//         count++;
+//       }
+//     }
+
+//     String answer;
+//     if (count == 0) {
+//       answer = '0';
+//     } else if (count == 1) {
+//       answer = '1';
+//     } else {
+//       answer = '>1';
+//     }
+
+//     return SchoolsQueryResult(
+//       count: count,
+//       matchedAddress: matched,
+//       lon: lon,
+//       lat: lat,
+//       answer: answer,
+//       layerId: 0,
+//     );
+//   }
+
+//   static Future<List<Map<String, dynamic>>> _loadLocalData() async {
+//     if (_cachedFeatures != null) return _cachedFeatures!;
+//     final jsonString = await rootBundle.loadString(_assetPath);
+//     final data = jsonDecode(jsonString) as Map<String, dynamic>;
+//     _cachedFeatures = (data['features'] as List).cast<Map<String, dynamic>>();
+//     return _cachedFeatures!;
+//   }
+
+//   /// Haversine distance in miles.
+//   static double _distanceMiles(
+//     double lat1,
+//     double lon1,
+//     double lat2,
+//     double lon2,
+//   ) {
+//     const earthRadiusMiles = 3958.8;
+//     final dLat = _deg2rad(lat2 - lat1);
+//     final dLon = _deg2rad(lon2 - lon1);
+//     final a =
+//         math.sin(dLat / 2) * math.sin(dLat / 2) +
+//         math.cos(_deg2rad(lat1)) *
+//             math.cos(_deg2rad(lat2)) *
+//             math.sin(dLon / 2) *
+//             math.sin(dLon / 2);
+//     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+//     return earthRadiusMiles * c;
+//   }
+
+//   static double _deg2rad(double deg) => deg * (math.pi / 180.0);
+
+//   static Future<Map<String, dynamic>> _geocodeAddress(String address) async {
+//     final url = Uri.parse(
+//       'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates',
+//     );
+//     final params = {
+//       'f': 'json',
+//       'singleLine': address,
+//       'outFields': 'Match_addr,Addr_type',
+//       'maxLocations': '1',
+//     };
+//     final response = await http.get(
+//       url.replace(queryParameters: params),
+//       headers: {'Accept': 'application/json'},
+//     );
+//     if (response.statusCode != 200) {
+//       throw Exception('Geocoding failed: HTTP ${response.statusCode}');
+//     }
+//     final data = jsonDecode(response.body) as Map<String, dynamic>;
+//     final candidates = data['candidates'] as List?;
+//     if (candidates == null || candidates.isEmpty) {
+//       throw Exception('No geocoding results for: $address');
+//     }
+//     final best = candidates[0] as Map<String, dynamic>;
+//     final location = best['location'] as Map<String, dynamic>?;
+//     if (location == null) throw Exception('No location in geocoding result');
+//     return {
+//       'lon': (location['x'] as num).toDouble(),
+//       'lat': (location['y'] as num).toDouble(),
+//       'matched': (best['address'] as String?) ?? address,
+//     };
+//   }
+
+//   static void clearCache() {
+//     _cachedFeatures = null;
+//   }
+// }
