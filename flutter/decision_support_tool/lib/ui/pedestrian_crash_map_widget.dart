@@ -655,21 +655,22 @@ class PedestrianCrashMapWidget extends StatelessWidget {
     // Process drawn polyline for display
     List<LatLng>? drawnLinePoints;
     List<LatLng>? bufferedPolygonPoints;
+    List<LatLng>? bufferHolePoints;
 
     if (drawnPolyline != null && drawnPolyline!.isNotEmpty) {
-      // Points for the drawn polyline display (open)
       drawnLinePoints = drawnPolyline!
           .map((coords) => LatLng(coords[1], coords[0]))
           .toList();
 
       const bufferMiles = 0.25;
-      final bufferedPolygon = _createBufferedPolygon(
-        drawnPolyline!,
-        bufferMiles,
-      );
-      bufferedPolygonPoints = bufferedPolygon
-          .map((coords) => LatLng(coords[1], coords[0]))
-          .toList();
+      // Outer ring of the 0.25-mile buffer
+      final outerRing = _createBufferedPolygon(drawnPolyline!, bufferMiles);
+      bufferedPolygonPoints =
+          outerRing.map((c) => LatLng(c[1], c[0])).toList();
+
+      // Inner hole for donut display when the polygon is large enough
+      final innerHole = _tryCreateBufferHole(drawnPolyline!, bufferMiles);
+      bufferHolePoints = innerHole?.map((c) => LatLng(c[1], c[0])).toList();
     }
 
     return Dialog(
@@ -734,13 +735,16 @@ class PedestrianCrashMapWidget extends StatelessWidget {
                     userAgentPackageName: 'com.example.app',
                   ),
 
-                  // Show full buffer area
+                  // Show buffer area (donut when inner hole is present)
                   if (bufferedPolygonPoints != null &&
                       bufferedPolygonPoints.isNotEmpty)
                     PolygonLayer(
                       polygons: [
                         Polygon(
                           points: List<LatLng>.from(bufferedPolygonPoints),
+                          holePointsList: bufferHolePoints != null
+                              ? [List<LatLng>.from(bufferHolePoints)]
+                              : [],
                           color: Colors.blue.withValues(alpha: 0.2),
                           borderColor: Colors.blue[700]!,
                           borderStrokeWidth: 2.0,
@@ -1247,6 +1251,127 @@ class PedestrianCrashMapWidget extends StatelessWidget {
       ]);
     }
     return points;
+  }
+
+  // Returns the inner hole polygon for a donut-shaped buffer, or null when
+  // the drawn shape is not a closed polygon or is too small to have a hole
+  // (i.e. entire interior is within bufferMiles of the perimeter).
+  static List<List<double>>? _tryCreateBufferHole(
+    List<List<double>> polylinePoints,
+    double bufferMiles,
+  ) {
+    if (polylinePoints.length < 3) return null;
+    final pts = List<List<double>>.from(polylinePoints);
+    final n = pts.length;
+    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / n;
+    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
+    final latToMiles = 69.0;
+    final closeDxMi = (pts.first[0] - pts.last[0]) * lonToMiles;
+    final closeDyMi = (pts.first[1] - pts.last[1]) * latToMiles;
+    if (math.sqrt(closeDxMi * closeDxMi + closeDyMi * closeDyMi) >= 0.031) {
+      return null; // open polyline — no hole
+    }
+    return _createInnerContractedPolygon(pts, bufferMiles, avgLat);
+  }
+
+  // Contracts the closed polygon inward by bufferMiles to produce the inner
+  // boundary of the donut.  Uses the same offset algorithm as the outer ring
+  // but with the perpendicular sign reversed (inward instead of outward).
+  // Returns null when the inward offset degenerates (polygon too small).
+  static List<List<double>>? _createInnerContractedPolygon(
+    List<List<double>> pts,
+    double bufferMiles,
+    double avgLat,
+  ) {
+    var ring = List<List<double>>.from(pts);
+    final d0x = ring.first[0] - ring.last[0];
+    final d0y = ring.first[1] - ring.last[1];
+    if (math.sqrt(d0x * d0x + d0y * d0y) > 1e-10) {
+      ring = [...ring, ring.first];
+    }
+    final closedRing = ring.sublist(0, ring.length - 1);
+    final nn = closedRing.length;
+
+    final bufferLatDeg = bufferMiles / 69.0;
+    final bufferLonDeg =
+        bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
+    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
+    final latToMiles = 69.0;
+
+    double signedArea = 0.0;
+    for (int i = 0; i < nn; i++) {
+      final j = (i + 1) % nn;
+      signedArea += closedRing[i][0] * closedRing[j][1] -
+          closedRing[j][0] * closedRing[i][1];
+    }
+    signedArea /= 2.0;
+    // Inward perpendicular: opposite sign to the outer buffer
+    final perpSign = signedArea > 0 ? 1.0 : -1.0;
+
+    const arcSteps = 16;
+    final innerPoints = <List<double>>[];
+
+    for (int i = 0; i < nn; i++) {
+      final current = closedRing[i];
+      final prev = closedRing[(i - 1 + nn) % nn];
+      final next = closedRing[(i + 1) % nn];
+
+      final dx1 = (current[0] - prev[0]) * lonToMiles;
+      final dy1 = (current[1] - prev[1]) * latToMiles;
+      final dx2 = (next[0] - current[0]) * lonToMiles;
+      final dy2 = (next[1] - current[1]) * latToMiles;
+
+      final cross = dx1 * dy2 - dy1 * dx2;
+      final isConvex = (cross * perpSign) < 0;
+
+      final inAngle = math.atan2(dy1, dx1);
+      final outAngle = math.atan2(dy2, dx2);
+      final perpIn = inAngle + perpSign * math.pi / 2.0;
+      final perpOut = outAngle + perpSign * math.pi / 2.0;
+
+      var delta = perpOut - perpIn;
+      while (delta > math.pi) delta -= 2 * math.pi;
+      while (delta < -math.pi) delta += 2 * math.pi;
+
+      if (isConvex && delta.abs() > 0.01) {
+        final steps =
+            (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
+        for (int j = 0; j <= steps; j++) {
+          final t = j / steps;
+          final angle = perpIn + t * delta;
+          innerPoints.add([
+            current[0] + bufferLonDeg * math.cos(angle),
+            current[1] + bufferLatDeg * math.sin(angle),
+          ]);
+        }
+      } else {
+        final bisector = perpIn + delta / 2.0;
+        final cosHalf = math.cos(delta / 2.0);
+        final miter = cosHalf.abs() > 0.1
+            ? (1.0 / cosHalf).clamp(-4.0, 4.0)
+            : 1.0;
+        innerPoints.add([
+          current[0] + bufferLonDeg * math.cos(bisector) * miter,
+          current[1] + bufferLatDeg * math.sin(bisector) * miter,
+        ]);
+      }
+    }
+
+    if (innerPoints.isEmpty) return null;
+    innerPoints.add(innerPoints[0]);
+
+    // Validate: contracted polygon must preserve winding (same sign as original).
+    // If the sign flips the polygon has inverted/self-intersected — no valid hole.
+    double contractedArea = 0.0;
+    for (int i = 0; i < innerPoints.length - 1; i++) {
+      contractedArea += innerPoints[i][0] * innerPoints[i + 1][1] -
+          innerPoints[i + 1][0] * innerPoints[i][1];
+    }
+    contractedArea /= 2.0;
+    if (contractedArea.abs() < 1e-10) return null;
+    if (contractedArea.sign != signedArea.sign) return null;
+
+    return innerPoints;
   }
 
   Widget _buildStatItem(String label, String value, Color color) {

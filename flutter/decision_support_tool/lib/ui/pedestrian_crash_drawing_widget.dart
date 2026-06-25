@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:decision_support_tool/services/pedestrian_crash_drawing_service.dart';
+import 'dart:math' as math;
 
 /// Interactive widget for drawing a polygon and calculating pedestrian crash density.
 class PedestrianCrashDrawingWidget extends StatefulWidget {
@@ -420,10 +421,32 @@ class _PedestrianCrashDrawingWidgetState
     });
   }
 
+  // How close (in miles) a new tap must be to snap to an existing point.
+  // ~105 ft / 32 m -- easy to close a polygon without pixel-perfect clicking.
+  static const double _snapThresholdMiles = 0.02;
+
   void _onMapTap(TapPosition tapPosition, LatLng latLng) {
-    if (_isDrawing) {
-      setState(() => _drawnPoints.add(latLng));
+    if (!_isDrawing) return;
+
+    // Snap the tapped location to the nearest existing drawn point if within
+    // the snap threshold.  Identical coordinates allow the service to detect
+    // a closed polygon (closeDistMi == 0 < 0.031) and use the correct
+    // closed-polygon buffer path instead of the open-polyline path.
+    LatLng snapped = latLng;
+    if (_drawnPoints.isNotEmpty) {
+      final lonToMiles =
+          69.0 * math.cos(latLng.latitude * math.pi / 180.0);
+      for (final existing in _drawnPoints) {
+        final dx = (latLng.longitude - existing.longitude) * lonToMiles;
+        final dy = (latLng.latitude - existing.latitude) * 69.0;
+        if (math.sqrt(dx * dx + dy * dy) < _snapThresholdMiles) {
+          snapped = existing;
+          break;
+        }
+      }
     }
+
+    setState(() => _drawnPoints.add(snapped));
   }
 
   void _undoLastPoint() {

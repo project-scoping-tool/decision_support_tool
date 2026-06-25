@@ -592,33 +592,25 @@ class PedestrianCrashDrawingService {
       final crashFeatures = await _loadCrashDataFromAsset();
       print('✓ Loaded ${crashFeatures.length} crash records');
 
-      print('Step 3: Creating buffer around polyline...');
-      final bufferedPolygon = _createBufferedPolygon(
+      print('Step 3: Calculating buffer area (grid sampling)...');
+      final areaSqMiles = _calculateBufferAreaGrid(polylinePoints, _bufferMiles);
+      print('Area: ${areaSqMiles.toStringAsFixed(6)} sq miles');
+
+      print('Step 4: Counting crashes within buffer...');
+      final crashesInArea = _filterCrashesByDistance(
+        crashFeatures,
         polylinePoints,
         _bufferMiles,
       );
-      print('✓ Created buffered polygon with ${bufferedPolygon.length} points');
-
-      print('Step 4: Calculating area...');
-      final areaSqMiles = _calculatePolygonArea(bufferedPolygon);
-      print('\u2713 Area: \${areaSqMiles.toFixed(6)} sq miles');
-
-      print('Step 5: Counting crashes within buffer area...');
-      final crashesInArea = _filterCrashesInPolygon(
-        crashFeatures,
-        bufferedPolygon,
-      );
       final count = crashesInArea.length;
-      print('\u2713 Found \$count crashes within buffer area');
+      print('Found $count crashes within buffer');
 
       final density = areaSqMiles > 0 ? count / areaSqMiles : 0.0;
       final densityRounded = density.round();
-      print(
-        '✓ Density: ${density.toFixed(2)} crashes/sq mi (rounded: $densityRounded)',
-      );
+      print('Density: ${density.toStringAsFixed(2)} crashes/sq mi (rounded: $densityRounded)');
 
       final answer = _getAnswerFromDensity(densityRounded);
-      print('✓ Answer range: $answer');
+      print('Answer range: $answer');
 
       print('=== Pedestrian Crash Drawing Calculation Complete ===');
 
@@ -923,19 +915,113 @@ class PedestrianCrashDrawingService {
     return points;
   }
 
-  /// Returns the drawn polygon as a closed ring, removing any duplicate closing point.
-  /// Returns crashes that fall inside [outerPolygon] but outside [innerPolygon]
-  /// (i.e. within the 0.25-mile buffer strip, matching ArcGIS Polyline buffer behavior).
-  static List<Map<String, dynamic>> _filterCrashesInPolygon(
-    List<Map<String, dynamic>> crashFeatures,
-    List<List<double>> polygon,
+  static double _distToSegmentMiles(
+    double px,
+    double py,
+    double ax,
+    double ay,
+    double bx,
+    double by,
+    double lonToMiles,
+    double latToMiles,
   ) {
-    final filtered = <Map<String, dynamic>>[];
+    final pxM = px * lonToMiles;
+    final pyM = py * latToMiles;
+    final axM = ax * lonToMiles;
+    final ayM = ay * latToMiles;
+    final bxM = bx * lonToMiles;
+    final byM = by * latToMiles;
+    final dx = bxM - axM;
+    final dy = byM - ayM;
+    final lenSq = dx * dx + dy * dy;
+    if (lenSq == 0) {
+      final ex = pxM - axM;
+      final ey = pyM - ayM;
+      return math.sqrt(ex * ex + ey * ey);
+    }
+    final t = ((pxM - axM) * dx + (pyM - ayM) * dy) / lenSq;
+    final tc = t.clamp(0.0, 1.0);
+    final cx = axM + tc * dx;
+    final cy = ayM + tc * dy;
+    final ex = pxM - cx;
+    final ey = pyM - cy;
+    return math.sqrt(ex * ex + ey * ey);
+  }
 
-    print(
-      '  Checking \${crashFeatures.length} crashes against polygon with \${polygon.length} points',
-    );
+  static double _distToPolylineMiles(
+    double lon,
+    double lat,
+    List<List<double>> pts,
+    double lonToMiles,
+    double latToMiles,
+  ) {
+    double minDist = double.infinity;
+    for (int i = 0; i < pts.length - 1; i++) {
+      final d = _distToSegmentMiles(
+        lon, lat,
+        pts[i][0], pts[i][1],
+        pts[i + 1][0], pts[i + 1][1],
+        lonToMiles, latToMiles,
+      );
+      if (d < minDist) minDist = d;
+    }
+    return minDist;
+  }
 
+  // Returns true if (lon, lat) is within bufferMiles of the polyline.
+  // For closed polygons this naturally produces an ArcGIS-style donut: when
+  // the polygon is large enough that its centre is farther than bufferMiles
+  // from every edge, the centre hole is excluded automatically.
+  static bool _isPointInBuffer(
+    double lon,
+    double lat,
+    List<List<double>> pts,
+    double bufferMiles,
+  ) {
+    if (pts.isEmpty) return false;
+    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / pts.length;
+    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
+    const latToMiles = 69.0;
+    return _distToPolylineMiles(lon, lat, pts, lonToMiles, latToMiles) <= bufferMiles;
+  }
+
+  // Grid-based area: count cells inside buffer, multiply by cell area.
+  // Step 0.0005 deg (~55 m) avoids double-counting overlapping buffer parts.
+  static double _calculateBufferAreaGrid(
+    List<List<double>> pts,
+    double bufferMiles,
+  ) {
+    if (pts.isEmpty) return 0.0;
+    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / pts.length;
+    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
+    const latToMiles = 69.0;
+    const step = 0.0005;
+    final cellArea = (step * lonToMiles) * (step * latToMiles);
+    double minLon = pts.map((p) => p[0]).reduce((a, b) => a < b ? a : b);
+    double maxLon = pts.map((p) => p[0]).reduce((a, b) => a > b ? a : b);
+    double minLat = pts.map((p) => p[1]).reduce((a, b) => a < b ? a : b);
+    double maxLat = pts.map((p) => p[1]).reduce((a, b) => a > b ? a : b);
+    final bufLonDeg = bufferMiles / lonToMiles;
+    final bufLatDeg = bufferMiles / latToMiles;
+    minLon -= bufLonDeg + step;
+    maxLon += bufLonDeg + step;
+    minLat -= bufLatDeg + step;
+    maxLat += bufLatDeg + step;
+    int count = 0;
+    for (double sLat = minLat; sLat <= maxLat; sLat += step) {
+      for (double sLon = minLon; sLon <= maxLon; sLon += step) {
+        if (_isPointInBuffer(sLon, sLat, pts, bufferMiles)) count++;
+      }
+    }
+    return count * cellArea;
+  }
+
+  static List<Map<String, dynamic>> _filterCrashesByDistance(
+    List<Map<String, dynamic>> crashFeatures,
+    List<List<double>> pts,
+    double bufferMiles,
+  ) {
+    final result = <Map<String, dynamic>>[];
     for (final feature in crashFeatures) {
       final geometry = feature['geometry'] as Map<String, dynamic>?;
       if (geometry == null) continue;
@@ -943,31 +1029,13 @@ class PedestrianCrashDrawingService {
       if (coords == null || coords.length < 2) continue;
       final crashLon = (coords[0] as num).toDouble();
       final crashLat = (coords[1] as num).toDouble();
-
-      if (_isPointInPolygonRobust(crashLon, crashLat, polygon)) {
-        filtered.add(feature);
+      if (_isPointInBuffer(crashLon, crashLat, pts, bufferMiles)) {
+        result.add(feature);
       }
     }
-
-    return filtered;
+    return result;
   }
 
-  static double _calculatePolygonArea(List<List<double>> polygonPoints) {
-    if (polygonPoints.length < 3) return 0.0;
-    double area = 0.0;
-    for (int i = 0; i < polygonPoints.length - 1; i++) {
-      final p1 = polygonPoints[i];
-      final p2 = polygonPoints[i + 1];
-      area += p1[0] * p2[1] - p2[0] * p1[1];
-    }
-    area = area.abs() / 2.0;
-    final avgLat =
-        polygonPoints.map((p) => p[1]).reduce((a, b) => a + b) /
-        polygonPoints.length;
-    final latFactor = math.cos(avgLat * math.pi / 180.0);
-    final sqMiles = area * 4761.0 * latFactor;
-    return sqMiles;
-  }
 
   static bool _isPointInPolygonRobust(
     double x,
