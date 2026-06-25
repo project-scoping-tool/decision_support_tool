@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:decision_support_tool/services/activity_density_drawing_service.dart';
+import 'dart:math' as math;
 
 /// Interactive widget for drawing a polygon and calculating activity density
 /// from the EPA Smart Location Database. Mirrors the pattern of
@@ -416,10 +417,28 @@ class _ActivityDensityDrawingWidgetState
     });
   }
 
+  // How close (in miles) a new tap must be to snap to an existing point.
+  // ~105 ft / 32 m — easy to close a polygon without pixel-perfect clicking.
+  static const double _snapThresholdMiles = 0.02;
+
   void _onMapTap(TapPosition tapPosition, LatLng latLng) {
-    if (_isDrawing) {
-      setState(() => _drawnPoints.add(latLng));
+    if (!_isDrawing) return;
+
+    LatLng snapped = latLng;
+    if (_drawnPoints.isNotEmpty) {
+      final lonToMiles =
+          69.0 * math.cos(latLng.latitude * math.pi / 180.0);
+      for (final existing in _drawnPoints) {
+        final dx = (latLng.longitude - existing.longitude) * lonToMiles;
+        final dy = (latLng.latitude - existing.latitude) * 69.0;
+        if (math.sqrt(dx * dx + dy * dy) < _snapThresholdMiles) {
+          snapped = existing;
+          break;
+        }
+      }
     }
+
+    setState(() => _drawnPoints.add(snapped));
   }
 
   void _undoLastPoint() {
