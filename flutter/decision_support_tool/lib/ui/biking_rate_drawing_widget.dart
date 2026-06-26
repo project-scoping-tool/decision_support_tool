@@ -465,7 +465,7 @@ class _BikingRateDrawingWidgetState extends State<BikingRateDrawingWidget> {
 
   // How close (in miles) a new tap must be to snap to an existing point.
   // ~105 ft / 32 m — easy to close a polygon without pixel-perfect clicking.
-  static const double _snapThresholdMiles = 0.005;
+  static const double _snapThresholdMiles = 0.01;
 
   void _onMapTap(TapPosition tapPosition, LatLng latLng) {
     if (!_isDrawing) return;
