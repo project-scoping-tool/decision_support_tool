@@ -150,7 +150,7 @@ class LandUseDiversityMapWidget extends StatelessWidget {
 
     // ── Drawn polygon outline ────────────────────────────────────────────────
     List<LatLng>? drawnOutline;
-    if (result.drawnPolygon != null && result.drawnPolygon!.length >= 3) {
+    if (result.drawnPolygon != null && result.drawnPolygon!.length >= 2) {
       drawnOutline = result.drawnPolygon!
           .map((c) => LatLng(c[1], c[0]))
           .toList();
@@ -232,7 +232,7 @@ class LandUseDiversityMapWidget extends StatelessWidget {
                     PolygonLayer(polygons: regionPolygons),
 
                   // 2. Drawn polygon outline
-                  if (drawnOutline != null && drawnOutline.length >= 3)
+                  if (drawnOutline != null && drawnOutline.length >= 2)
                     PolygonLayer(
                       polygons: [
                         Polygon(

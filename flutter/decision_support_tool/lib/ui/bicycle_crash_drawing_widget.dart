@@ -311,7 +311,7 @@
 //                               vertical: 12.0,
 //                             ),
 //                           ),
-//                           onPressed: _drawnPoints.length >= 3
+//                           onPressed: _drawnPoints.length >= 2
 //                               ? _finishDrawing
 //                               : null,
 //                         ),
@@ -420,9 +420,9 @@
 //   }
 
 //   void _finishDrawing() {
-//     if (_drawnPoints.length < 3) {
+//     if (_drawnPoints.length < 2) {
 //       setState(() {
-//         _errorMessage = 'Please draw at least 3 points to form an area.';
+//         _errorMessage = 'Please draw at least 2 points.';
 //       });
 //       return;
 //     }
@@ -442,9 +442,9 @@
 //   }
 
 //   Future<void> _calculateDensity() async {
-//     if (_drawnPoints.length < 3) {
+//     if (_drawnPoints.length < 2) {
 //       setState(() {
-//         _errorMessage = 'Please draw at least 3 points to form an area.';
+//         _errorMessage = 'Please draw at least 2 points.';
 //       });
 //       return;
 //     }
@@ -797,7 +797,7 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
                               vertical: 12.0,
                             ),
                           ),
-                          onPressed: _drawnPoints.length >= 3
+                          onPressed: _drawnPoints.length >= 2
                               ? _finishDrawing
                               : null,
                         ),
@@ -926,9 +926,9 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
   }
 
   void _finishDrawing() {
-    if (_drawnPoints.length < 3) {
+    if (_drawnPoints.length < 2) {
       setState(() {
-        _errorMessage = 'Please draw at least 3 points to form an area.';
+        _errorMessage = 'Please draw at least 2 points.';
       });
       return;
     }
@@ -947,9 +947,9 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
   }
 
   Future<void> _calculateDensity() async {
-    if (_drawnPoints.length < 3) {
+    if (_drawnPoints.length < 2) {
       setState(() {
-        _errorMessage = 'Please draw at least 3 points to form an area.';
+        _errorMessage = 'Please draw at least 2 points.';
       });
       return;
     }

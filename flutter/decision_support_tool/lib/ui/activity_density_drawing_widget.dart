@@ -118,9 +118,9 @@ class _ActivityDensityDrawingWidgetState
                   Expanded(
                     child: Text(
                       _isDrawing
-                          ? 'Click on the map to add polygon vertices. '
-                                'Press "Finish Drawing" when the area is enclosed '
-                                '(minimum 3 points).'
+                          ? 'Click on the map to add points. '
+                                'Press "Finish Drawing" when you are finished drawing '
+                                '(minimum 2 points).'
                           : _drawnPoints.isNotEmpty
                           ? 'Project area loaded from a previous question. '
                                 'Press "Calculate Activity Density" to reuse it, '
@@ -156,7 +156,7 @@ class _ActivityDensityDrawingWidgetState
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.app',
                       ),
-                      if (_drawnPoints.length >= 3)
+                      if (_drawnPoints.length >= 2)
                         PolygonLayer(
                           polygons: [
                             Polygon(
@@ -322,7 +322,7 @@ class _ActivityDensityDrawingWidgetState
                               vertical: 12.0,
                             ),
                           ),
-                          onPressed: _drawnPoints.length >= 3
+                          onPressed: _drawnPoints.length >= 2
                               ? _finishDrawing
                               : null,
                         ),
@@ -447,9 +447,9 @@ class _ActivityDensityDrawingWidgetState
   }
 
   void _finishDrawing() {
-    if (_drawnPoints.length < 3) {
+    if (_drawnPoints.length < 2) {
       setState(() {
-        _errorMessage = 'Please draw at least 3 points to form an area.';
+        _errorMessage = 'Please draw at least 2 points.';
       });
       return;
     }
@@ -468,9 +468,9 @@ class _ActivityDensityDrawingWidgetState
   }
 
   Future<void> _calculateActivityDensity() async {
-    if (_drawnPoints.length < 3) {
+    if (_drawnPoints.length < 2) {
       setState(() {
-        _errorMessage = 'Please draw at least 3 points to form an area.';
+        _errorMessage = 'Please draw at least 2 points.';
       });
       return;
     }

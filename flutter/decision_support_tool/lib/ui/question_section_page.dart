@@ -1693,7 +1693,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     required double lat,
     required double lon,
   }) async {
-    if (_savedProjectPolygon == null || _savedProjectPolygon!.length < 3) {
+    if (_savedProjectPolygon == null || _savedProjectPolygon!.length < 2) {
       return null; // No saved polygon – go straight to blank draw widget.
     }
     if (!mounted) return null;

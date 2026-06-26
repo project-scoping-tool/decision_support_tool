@@ -141,7 +141,7 @@ class ActivityDensityMapWidget extends StatelessWidget {
 
     // ── Drawn polygon outline ───────────────────────────────────────────────────
     List<LatLng>? drawnOutline;
-    if (result.drawnPolygon != null && result.drawnPolygon!.length >= 3) {
+    if (result.drawnPolygon != null && result.drawnPolygon!.length >= 2) {
       drawnOutline = result.drawnPolygon!
           .map((c) => LatLng(c[1], c[0]))
           .toList();

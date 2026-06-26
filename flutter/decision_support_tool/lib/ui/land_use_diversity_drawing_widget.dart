@@ -119,9 +119,9 @@ class _LandUseDiversityDrawingWidgetState
                   Expanded(
                     child: Text(
                       _isDrawing
-                          ? 'Click on the map to add polygon vertices. '
-                                'Press "Finish Drawing" when the area is enclosed '
-                                '(minimum 3 points).'
+                          ? 'Click on the map to add points. '
+                                'Press "Finish Drawing" when you are finished drawing '
+                                '(minimum 2 points).'
                           : 'Press "Start Drawing" to outline the project area. '
                                 'The tool will query the EPA Smart Location Database '
                                 'and calculate the land use diversity index automatically.',
@@ -155,7 +155,7 @@ class _LandUseDiversityDrawingWidgetState
                       ),
 
                       // Drawn polygon fill + outline
-                      if (_drawnPoints.length >= 3)
+                      if (_drawnPoints.length >= 2)
                         PolygonLayer(
                           polygons: [
                             Polygon(
@@ -285,7 +285,7 @@ class _LandUseDiversityDrawingWidgetState
                       _buildStatItem(
                         'Points drawn',
                         _drawnPoints.length.toString(),
-                        _drawnPoints.length >= 3
+                        _drawnPoints.length >= 2
                             ? Colors.green[700]!
                             : Colors.grey[700]!,
                       ),
@@ -337,7 +337,7 @@ class _LandUseDiversityDrawingWidgetState
                               vertical: 12.0,
                             ),
                           ),
-                          onPressed: _drawnPoints.length >= 3
+                          onPressed: _drawnPoints.length >= 2
                               ? _finishDrawing
                               : null,
                         ),
@@ -467,9 +467,9 @@ class _LandUseDiversityDrawingWidgetState
   }
 
   void _finishDrawing() {
-    if (_drawnPoints.length < 3) {
+    if (_drawnPoints.length < 2) {
       setState(() {
-        _errorMessage = 'Please draw at least 3 points to form an area.';
+        _errorMessage = 'Please draw at least 2 points.';
       });
       return;
     }
@@ -488,9 +488,9 @@ class _LandUseDiversityDrawingWidgetState
   }
 
   Future<void> _calculateDiversityIndex() async {
-    if (_drawnPoints.length < 3) {
+    if (_drawnPoints.length < 2) {
       setState(() {
-        _errorMessage = 'Please draw at least 3 points to form an area.';
+        _errorMessage = 'Please draw at least 2 points.';
       });
       return;
     }

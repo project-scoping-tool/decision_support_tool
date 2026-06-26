@@ -143,7 +143,7 @@ class _ProjectAreaReuseDialog extends StatelessWidget {
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.app',
                   ),
-                  if (savedPoints.length >= 3)
+                  if (savedPoints.length >= 2)
                     PolygonLayer(
                       polygons: [
                         Polygon(

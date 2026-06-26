@@ -141,7 +141,7 @@ class WalkingRateMapWidget extends StatelessWidget {
 
     // ── Drawn polygon outline ─────────────────────────────────────────────────
     List<LatLng>? drawnOutline;
-    if (result.drawnPolygon != null && result.drawnPolygon!.length >= 3) {
+    if (result.drawnPolygon != null && result.drawnPolygon!.length >= 2) {
       drawnOutline = result.drawnPolygon!
           .map((c) => LatLng(c[1], c[0]))
           .toList();
@@ -223,7 +223,7 @@ class WalkingRateMapWidget extends StatelessWidget {
                     PolygonLayer(polygons: tractPolygons),
 
                   // 2. Drawn polygon outline (on top of tract fills)
-                  if (drawnOutline != null && drawnOutline.length >= 3)
+                  if (drawnOutline != null && drawnOutline.length >= 2)
                     PolygonLayer(
                       polygons: [
                         Polygon(
