@@ -18,10 +18,10 @@ instructionsMarkdown = '''
 * Click on the magnifying glass icon in the top right, then enter the address of the project area into the search bar and hit enter.
 * To zoom in or out from the address area, click the plus (+) or minus (–) buttons located at the lower right corner, just above the home icon.
 * To measure a distance, choose the "Select to Add Point" option (the geolocation marker icon) on the right sidebar, located just below the arrow icon.
-* Click on a point within the project area, then select the "Filter to This Point" option.
-* Enter 0.5 in the "Distance" field and choose miles from the "Units" drop-down menu.
-* All schools within a ½-mile radius of the selected point will be highlighted with a black circle. You may need to zoom out to see the entire circle.
-* The number of schools can be verified by clicking on the table icon on the right-side menu, where all schools within 0.5 miles should be listed.
-* Select the answer below that corresponds to the number of schools located within ½ mile of the project area.'''
+  * Click on a point within the project area, then select the "Filter to This Point" option.
+  * Enter 0.5 in the "Distance" field and choose miles from the "Units" drop-down menu.
+  * All schools within a ½-mile radius of the selected point will be highlighted with a black circle. You may need to zoom out to see the entire circle.
+  * The number of schools can be verified by clicking on the table icon on the right-side menu, where all schools within 0.5 miles should be listed.
+  * Select the answer below that corresponds to the number of schools located within ½ mile of the project area.'''
 videoId = ''
 hint = ''
