@@ -1,0 +1,24 @@
+questionText = 'How many bus stops are within ¼ mile radius?'
+useUrl = 'Use Washoe County Interactive Map'
+url = 'https://www.arcgis.com/apps/mapviewer/index.html?layers=59fed1e33fd741989696ea752e348afd'
+answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 2.0 }]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = 'Bus Stops'
+instructionsMarkdown = '''
+* Click on the link for the Washoe County Interactive Map, [available here](https://www.arcgis.com/apps/mapviewer/index.html?layers=59fed1e33fd741989696ea752e348afd).
+* Click "OK" on the opening disclaimer, if it appears.
+* Click the right-facing arrow next to "RTC Bus Routes and Stops" in the left sidebar to expand the options
+* Ensure that the "Bus Stops" option is not hidden and that all other options are hidden. (Note: An eye-shaped icon with a line through it signifies the option is hidden.)
+* On the left, click on "Basemap" (the icon with four small squares) and select "Imagery Hybrid."
+* To locate a specific area, click the magnifying glass icon on the bottom-right side of the map. Enter the project area address in the search box and hit enter.
+* Bus stops will appear as red dots to indicate locations.
+* Zoom in and out from the address area using the plus (+) and minus (-) buttons on the lower right of the map. Zoom in and out as needed to see bus stops within ¼-mile radius.
+* To measure distance, click on "Map Tools" (wrench icon) in the menu on the far right of the map, then select the "Measurement" option (ruler icon).
+* Click on a point in the project area that is closest to the bus stop to activate the tool.
+* Next, select "miles" on the drop-down menu for "Unit," then drag the measurement line to the bus stop icon to reveal the distance
+* Continue this process until it is clear if there are 0 or >1 bus stops within ¼ mile radius
+* Select the answer below that corresponds to the number of bus stops located within ¼ mile of the project area'''
+videoId = ''
+hint = ''

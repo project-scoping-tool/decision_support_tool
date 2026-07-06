@@ -1,0 +1,22 @@
+questionText = 'How many bicycle lanes and/or shared use paths are in the area or within ¼ mile radius?'
+useUrl = 'Use RTC Washoe data'
+url = 'https://regional-transportation-commission-washoe-open-data-rtcwashoe.hub.arcgis.com/apps/4f1ba7ad3d874a8595d1aa35479b49c3/explore'
+answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 4.0 }]
+answerLeadingHeader = 'Number:'
+domain = 'Connectivity'
+autoFillEnabled = false
+buttonText = 'Bike Lanes'
+instructionsMarkdown = '''
+* Click on the RTC data link for Washoe [here](https://regional-transportation-commission-washoe-open-data-rtcwashoe.hub.arcgis.com/apps/4f1ba7ad3d874a8595d1aa35479b49c3/explore).
+* Click on the link titled 'Bicycle Facility' underneath the Download section
+* Click on the magnifying glass icon in the top right, then enter the address of the project area into the search bar and hit enter.
+* To zoom in or out from the address area, click the plus (+) or minus (–) buttons located at the lower right corner, just above the home icon.
+* To measure a distance, choose the "Select to Add Point" option (the geolocation marker icon) on the right sidebar, located just below the arrow icon.
+* Click on a point within the project area, then select the "Filter to This Point" option.
+* Enter 0.25 in the "Distance" field and choose miles from the "Units" drop-down menu.
+* All schools within a ½-mile radius of the selected point will be highlighted with a black circle. You may need to zoom out to see the entire circle.
+* Select 'Filter Data' on the left side of the map (funnel icon) and select 'Type.' Type "existing lane" into the search bar that appears and click on the result. Then type "existing path" and click on the result.
+* Count all lanes/paths that fall within the area. The number of lanes/paths can be verified by clicking on the table icon on the right-side menu, where all facilities within 0.25 miles should be listed.
+* Select the answer below that corresponds to the number of bicycle lanes and/or shared use paths located within 1/4 mile of the project area'''
+videoId = ''
+hint = ''

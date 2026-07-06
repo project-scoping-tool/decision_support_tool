@@ -1,0 +1,23 @@
+state = 'Nevada'
+jurisdiction = 'Washoe County'
+questionInfoIds = [
+  [
+    'underserved',
+    'biking-rate',
+    'walking-rate',
+    'pedestrian-crash',
+    'bicycle-crash',
+    'land-use-diversity',
+    'hu-jpa',
+    'schools-washoe',
+    'public-parks-washoe',
+    'bus-stops-washoe',
+    'bike-lanes-washoe',
+  ],
+  [
+    'walkability',
+    'comfort-level',
+    'maps-mini',
+  ],
+]
+recommendationsInfoId = 'nv-recommendations-info'
