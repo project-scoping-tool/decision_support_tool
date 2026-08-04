@@ -24,5 +24,5 @@ instructionsMarkdown = '''
   * Click the "X" in the corner of the legend (or next to "deselect") to deselect and choose another Tract
   * If the project area straddles multiple Census Tracts, find the percent who bike to work in each Tract. Then, calculate the average across Tracts by adding up the percent of people who bike to work in each Tract and then dividing by the total number of Tracts.
 * Select the corresponding PST option.'''
-videoId = '1Eoob7mHCJOcq2MG44CvToDilM_Mow1A0'
+videoId = '1rMPpmqoKDFx6zb2DBktmRW67OMEUpxWf'
 hint = ''
