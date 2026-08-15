@@ -1,6 +1,6 @@
 questionText = 'What is the bicycle crash density in the area? (bicycle crashes/sq. mile)'
 useUrl = 'Bicycle Crash - Use bicycle crash data map'
-url = 'https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=615504612df74a94b2a838cf5f619c20'
+url = 'https://experience.arcgis.com/experience/e3fc453ef32d41819135f2b0d6e5c78d'
 answers = [
   { text = '0-4', points = 1.0 },
   { text = '5-7', points = 2.0 },
@@ -13,7 +13,7 @@ domain = 'Crash'
 autoFillEnabled = true
 buttonText = 'Bicycle Crash'
 instructionsMarkdown = '''
-* Click on the link for Nevada Bicycle Crash Data 2018-2021, [available here](https://unlvarcgisonline.maps.arcgis.com/apps/webappviewer/index.html?id=615504612df74a94b2a838cf5f619c20).
+* Click on the link for Nevada Bicycle Crash Data 2018-2021, [available here](https://experience.arcgis.com/experience/e3fc453ef32d41819135f2b0d6e5c78d).
 * Enter an address within the project area into the search bar and click "Search."
 * Select the "Screening" tool icon under the address search bar. (The button may be hidden by the address search, click anywhere on the map to get it to minimize and reveal the button.)
 * Under "Place Name," re-enter the address in the "Search for a Location" bar.

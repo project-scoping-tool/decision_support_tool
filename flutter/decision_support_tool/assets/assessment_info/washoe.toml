@@ -3,10 +3,10 @@ jurisdiction = 'Washoe County'
 questionInfoIds = [
   [
     'underserved',
-    'biking-rate',
-    'walking-rate',
-    'pedestrian-crash',
-    'bicycle-crash',
+    'biking-rate-washoe',
+    'walking-rate-washoe',
+    'pedestrian-crash-washoe',
+    'bicycle-crash-washoe',
     'land-use-diversity',
     'hu-jpa',
     'schools-washoe',
