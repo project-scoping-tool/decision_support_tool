@@ -1,10 +1,10 @@
 
-questionText = 'How many housing units + jobs per acre in the area?'
+questionText = 'What is the activity density (housing units + jobs per acre)?'
 useUrl = 'Use EPA Smart Location database'
 url = 'https://epa.maps.arcgis.com/home/webmap/viewer.html?webmap=137d4e512249480c980e00807562da10'
 answers = [
   { text = 'No Density', points = 0.0 },
-  { text = '0-0.27', points = 1.0 },
+  { text = '0.00-0.27', points = 1.0 },
   { text = '0.28-2.02', points = 2.0 },
   { text = '2.03-4.30', points = 3.0 },
   { text = '4.31-8.31', points = 4.0 },
@@ -15,18 +15,17 @@ domain = 'Land Use'
 autoFillEnabled = true
 buttonText = 'Activity Density (HU+Jobs/Acre)'
 instructionsMarkdown = '''
-* Click on the link provided for the EPA Smart Location database, [available here](https://epa.maps.arcgis.com/home/webmap/viewer.html?webmap=137d4e512249480c980e00807562da10).
-* Click on the “Content” button in the top left corner, under the “Basemap” button.
-* Click on the sideways carrot button to the left of “SmartLocationDatabase” to expand it into a dropdown menu
-* Click on the box for “Street intersection density” to take it off the map, and any other checked boxes
-* Check the box titled “Activity density (housing + jobs per acre)”
-* Enter the address for the project area inside the text box in the top right corner and hit the search button
-  * Zoom in or out on the map to view entire project area
+* Click on the link provided database, available [here](https://epa.maps.arcgis.com/home/webmap/viewer.html?webmap=137d4e512249480c980e00807562da10).
+* Click on the “Layers” button in the top left corner.
+* Click on the sideways carrot button (>) to the left of “SmartLocationDatabase” to expand it into a dropdown menu
+* Check the box titled Activity Density (housing units + jobs per acre). Deselect any other boxes, if necessary.
+* Click on the magnifying glass in the bottom right of the map. Enter the address for the project area inside the text box that appears and hit enter.
+  * Zoom in or out on the map to view entire project area. Note where the project area is located, as the circle indicator may disappear.
 * On the left, click on "Basemap" (the icon with four small squares) and select "Imagery Hybrid."
-* Click on "Legend” in the top left corner
+* Click on "Legend” in the top left corner. You may need to first select the icon of three dots beneath Basemap.
 * Cross-reference color(s) in the project area with the color/number range listed
   * If the project area straddles multiple color-coded zones, calculate the mid-point value for each Block Group and then compute their average. If this average is a whole number, then choose the lower interval as your response. For instance, if the average is 2, you would select 0-2 as your range, instead of 2-3.
 * Click the corresponding density.
 '''
-videoId = '1VlME61GXEpojU9swIOKF3-N9gVxOcIjv'
+videoId = '1LoVrvz3GNzsUsM6fXlD2O1lxo4F_tNy2'
 hint = ''

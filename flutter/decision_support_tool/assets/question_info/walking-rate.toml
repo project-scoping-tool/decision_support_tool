@@ -16,12 +16,11 @@ instructionsMarkdown = '''
 * Click the link for U.S. Census Data on walking to work, available [here](https://data.census.gov/map/0500000US32003$14000,32003$1400000/ACSST5Y2020/S0801/S0801_C01_010E?q=S0801&layer=VT_2020_140_00_PY_D1&palette=Greens&mode=thematic&loc=35.9453,-115.1393,z9.4648&g=050XX00US32003$1400000&tid=ACSST5Y2020.S0801&cid=S0801_C01_010E).
 * The map is already set to show Clark County, Nevada
   * Be sure to use the most current time period for which data is available (click on "Year" above the map to verify)
-  * Click the left-facing arrows (<<) to get the sidebar to minimize and enlarge the map, if necessary
 * Zoom in and out, as needed, to find the approximate project area by clicking on the plus and minus signs near the top right corner
   * If experiencing difficulty, try locating the project area by zooming in and visually scanning for the Census Tract number. Tract numbers for a given area can be located by searching the Census Geocoder and locating the “Name” under “Census Tracts” in the search result.
-* Click within a Census Tract to reveal the rate percentile of walking to work
+* Click within a Census Tract to reveal the rate percentile of walking to work within that tract
   * Be sure to identify the percent who walk to work, not the Census Tract number
-  * Click the "X" in the corner of the legend (or next to "deselect") to deselect and choose another Tract
+  * Click the "X" in the corner of the legend to deselect and choose another Tract
   * If the project area straddles multiple Census Tracts, find the percent who walk to work in each Tract. Then, calculate the average across Tracts by adding up the percent of people who walk to work in each Tract and then dividing by the total number of Tracts.
 * Select the corresponding PST option.'''
 videoId = '1rsuJBwFKzCQd044k1NNiQAvHkH6Nkvlt'

@@ -211,7 +211,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       child: Column(
         children: [
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
-          // _buildProjectAddressInput(), //  Address for auto
+          _buildProjectAddressInput(), //  Address for auto
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.02)),
           _buildWidgetTableHeader(),
           _buildWidgetTableCells(),
@@ -470,7 +470,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
 
           // AUTO-FILL BUTTON
-          // _buildWidgetAutoFillButton(questionIndex), // Button for auto
+          _buildWidgetAutoFillButton(questionIndex), // Button for auto
           // Space
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
           // Row for answers
@@ -1009,23 +1009,23 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
 
       // update v3
 
-      // case 'Walking Rate': // S1-Q3
-      //   buttonText = 'Draw Area & Calculate Walking Rate';
-      //   buttonIcon = Icons.directions_walk;
-      //   onPressed = () => _openWalkingRateDrawing(questionIndex);
-      //   break;
+      case 'Walking Rate': // S1-Q3
+        buttonText = 'Draw Area & Calculate Walking Rate';
+        buttonIcon = Icons.directions_walk;
+        onPressed = () => _openWalkingRateDrawing(questionIndex);
+        break;
 
-      // case 'Land Use Diversity': // S1-Q6
-      //   buttonText = 'Draw Area & Calculate Diversity Index';
-      //   buttonIcon = Icons.landscape;
-      //   onPressed = () => _openLandUseDiversityDrawing(questionIndex);
-      //   break;
+      case 'Land Use Diversity': // S1-Q6
+        buttonText = 'Draw Area & Calculate Diversity Index';
+        buttonIcon = Icons.landscape;
+        onPressed = () => _openLandUseDiversityDrawing(questionIndex);
+        break;
 
-      // case 'Activity Density (HU+Jobs/Acre)': // S1-Q7
-      //   buttonText = 'Draw Area & Calculate Activity Density';
-      //   buttonIcon = Icons.apartment;
-      //   onPressed = () => _openActivityDensityDrawing(questionIndex);
-      //   break;
+      case 'Activity Density (HU+Jobs/Acre)': // S1-Q7
+        buttonText = 'Draw Area & Calculate Activity Density';
+        buttonIcon = Icons.apartment;
+        onPressed = () => _openActivityDensityDrawing(questionIndex);
+        break;
 
       // case 'Walkability Index': // S2-Q1
       //   buttonText = 'Draw Area & Calculate Walkability Score';

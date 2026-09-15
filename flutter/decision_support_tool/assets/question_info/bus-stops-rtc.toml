@@ -1,21 +1,23 @@
-questionText = 'How many bus stops are within ¼ mile radius?'
-useUrl = 'Use RTC data'
-url = 'https://www.arcgis.com/home/webmap/viewer.html?panel=gallery&layers=3a1fde0a9b9a49e98574e0c6322a088f'
-answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 2.0 }]
+questionText = 'What is the level of bus service within a quarter mile of the project area, considering how often buses come and whether riders have shade while they wait?'
+useUrl = 'Use the RTC Bus Stop map,'
+url = 'https://experience.arcgis.com/experience/f15ba91713984502b5fb5becca64464f'
+answers = [
+  { text = '0-.75', points = 0.0 },
+  { text = '0.76-1.5', points = 1.0 },
+  { text = '1.6-2', points = 2.0 }
+  ]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = true
 buttonText = 'Bus Stops'
 instructionsMarkdown = '''
-* Click on the RTC data link, [available here](https://www.arcgis.com/home/webmap/viewer.html?panel=gallery&layers=3a1fde0a9b9a49e98574e0c6322a088f).
-* In the search box above the map on the top right of the screen, enter the address for the project area
-  * Click “Add to Map Notes” in the small box that appears on the project area to save the selected address
-* Zoom in and out (as needed) until the map displays about 1/4 mile in each direction from the project area
-* Bus stops will appear with blue bus symbols on the map
-* Click on the “Measure” button near the “Bookmarks” button and search bar on the top of the screen
-  * Select the “Distance” icon (a ruler with two arrows above it) and ensure “Miles” is set as the unit of measurement (in a drop-down menu slightly to the right)
-  * Click on a point within the project area closest to a bus stop and then drag the measurement line to the bus stop symbol to reveal the distance.
-  * If there is at least 1 bus stop within ¼ mile, select option “1 or more”; if there are no bus stops within ¼ mile, select option “0.”
-* Select the answer below that corresponds to the number of bus stops located within ¼ mile of the project area'''
-videoId = '1y7lZOzXtXRxZT5QrX3tnI7EgUSGn18Vu'
+* Click the link for the RTC Bus Stop map, available [here](https://experience.arcgis.com/experience/f15ba91713984502b5fb5becca64464f).
+* In the search box on the top left of the map, enter the address for the project area and click on the magnifying glass or press enter.
+* Zoom in and out (as needed) using the (+) and (-) buttons on the top left of the map.
+* Use the “Draw Area” button on the right sidebar to draw the shape of the project area.
+  * Left click at a point on the map to begin drawing. Left click again at the end of each segment. Double-click to complete the drawing. (Note: This may be different for Mac and PC users.)
+  * The bus stop accessibility score will appear in a blue box on the right toolbar.
+* Enter the answer below that corresponds to the number of parks located within ½ mile of the project area.
+'''
+videoId = '1-c5E25TSebN_3inZxxgYGgwjpCXezn7u'
 hint = ''

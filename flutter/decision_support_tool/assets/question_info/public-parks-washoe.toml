@@ -23,5 +23,5 @@ instructionsMarkdown = '''
   * All parks within a ½-mile radius of the selected point will be highlighted with a black circle. You may need to zoom out to see the entire circle.
   * The number of parks can be verified by clicking on the table icon on the right-side menu, where all parks within 0.5 miles should be listed.
   * Select the answer below that corresponds to the number of public parks located within ½ mile of the project area.'''
-videoId = ''
+videoId = '1iJ4-ebjHwsB7wf2snwnrrnJvpfOFDrai'
 hint = ''

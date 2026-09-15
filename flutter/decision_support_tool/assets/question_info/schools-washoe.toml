@@ -1,5 +1,5 @@
 
-questionText = 'How many schools are in the area and within a ½ mile radius?'
+questionText = 'How many schools – public and private – are in the area and within a ½-mile radius?'
 useUrl = 'Use Washoe County Open Data'
 url = 'https://explore-washoe.opendata.arcgis.com/'
 answers = [
@@ -23,5 +23,5 @@ instructionsMarkdown = '''
   * All schools within a ½-mile radius of the selected point will be highlighted with a black circle. You may need to zoom out to see the entire circle.
   * The number of schools can be verified by clicking on the table icon on the right-side menu, where all schools within 0.5 miles should be listed.
   * Select the answer below that corresponds to the number of schools located within ½ mile of the project area.'''
-videoId = ''
+videoId = '1TKQQAhhAXUbNDHu_ks8mHb2rgm-8vsWg'
 hint = ''

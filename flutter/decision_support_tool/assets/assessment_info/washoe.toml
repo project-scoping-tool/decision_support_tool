@@ -16,8 +16,9 @@ questionInfoIds = [
   ],
   [
     'walkability',
-    'comfort-level',
+    'comfort-level-washoe',
     'maps-mini',
+    'shade-washoe',
   ],
 ]
 recommendationsInfoId = 'nv-recommendations-info'

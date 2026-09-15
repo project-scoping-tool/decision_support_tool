@@ -1,0 +1,23 @@
+questionText = 'How much of the project area is shaded during a hot summer afternoon?'
+useUrl = 'Use the PST Tree Canopy and Shade Map, '
+url = 'https://experience.arcgis.com/experience/5dd478f3e17746e7bb3a374d1873bf73'
+answers = [
+  { text = '0% - <7.5%', points = 0.0 },
+  { text = '7.5% - <15%', points = 1.0 },
+  { text = '15+%', points = 2.0 },
+]
+answerLeadingHeader = 'Shade:'
+domain = ''
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click the link for the PST Tree Canopy and Shade Map, available [here](https://experience.arcgis.com/experience/5dd478f3e17746e7bb3a374d1873bf73).
+* In the search box on the top left of the map, enter the address for the project area and click on the magnifying glass or press enter.
+* Zoom in and out (as needed) using the (+) and (-) buttons on the top left of the map.
+* Use the “Draw Polygon” button on the right sidebar to draw the shape of the project area.
+  * Left click at a point on the map to begin drawing. Left click again at the end of each segment. Double-click to complete the drawing. (Note: This may be different for Mac and PC users.)
+  * The Combined Shade percentage will appear on the right toolbar.
+* Enter the answer below that corresponds to the combined shade of the project area during a hot summer afternoon.
+'''
+videoId = '1MG3Ep5M2eXuJJ4_tX7AzMgClWClW77rz'
+hint = ''

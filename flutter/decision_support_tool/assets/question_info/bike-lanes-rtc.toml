@@ -1,22 +1,22 @@
-questionText = 'How many bike lanes and shared use paths are in the area or within ¼ mile radius?'
+questionText = 'How many bike lanes and shared use paths are in the area or within 1/4 mile radius?'
 useUrl = 'Bike lanes and shared use paths: Use RTC data'
-url = 'https://www.arcgis.com/home/webmap/viewer.html?url=http%3A%2F%2Fgis.rtcsnv.com%2Farcgis%2Frest%2Fservices%2FWeb%2FPROD_BIKE%2FMapServer&source=sd'
+url = 'https://experience.arcgis.com/experience/21cefdd1b0004349ab370a348afdea4b/'
 answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 4.0 }]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = true
 buttonText = 'Bike Lanes'
 instructionsMarkdown = '''
-* Click on the RTC data link, [available here](https://www.arcgis.com/home/webmap/viewer.html?url=http%3A%2F%2Fgis.rtcsnv.com%2Farcgis%2Frest%2Fservices%2FWeb%2FPROD_BIKE%2FMapServer&source=sd).
-* In the search box above the map on the top right of the screen, enter the address for the project area
-  * Click “Add to Map Notes” in the small box that appears on the project area to save the selected address
-* Click on the “PROD BIKE” menu on the left side information bar. Ensure that the boxes for “Bicycle Lane” and “Shared Use Path” are checked and unchecked the remaining boxes.
-* Click on “Legend” in the top left to reveal how “Bicycle Lane” and “Shared Use Path” appear on the map.
-* Zoom in and out (as needed) until the map displays about 1/4 mile in each direction from the project area
-* Click on the “Measure” button near the search bar on the top of the screen
-  * Select the “Distance” icon (a ruler with two arrows above it) and ensure “Miles” is set as the unit of measurement (in a drop-down menu slightly to the right)
+* Access the RTC Bike Lanes Map, available [here](https://experience.arcgis.com/experience/21cefdd1b0004349ab370a348afdea4b/).
+* Click on the “Map Layers” icon on the information bar. Ensure that the boxes for “Enhanced Bicycle Lane,” “Bicycle Lane,” and “Shared Use Path” are checked, and uncheck the remaining boxes.
+* Click on “Legend” (icon with 3 horizontal lines) in the top right of the menu to reveal how “Enhanced Bicycle Lane,” “Bicycle Lane,” and “Shared Use Path” appear on the map, then exit that menu.
+* Click the magnifying glass icon at the top right of the map, then enter the project area address in the search bar and press enter.
+* Zoom in and out (as needed) using the (+) and (-) buttons on the top left of the map until the map displays about 1/4 mile in each direction from the project area. 
+* Click on the “Measure” button near the magnifying glass (a ruler with two arrows above it)
   * Click on a point within the project area closest to a bicycle lane or shared use path and then drag the measurement line to the lane or path to reveal the distance.
-  * Continue this process until it is clear if there are 0 or 1 or more bicycle lanes and/or shared use paths within 1/4 mile
-* Select the answer below that corresponds to the number of bicycle lanes and/or shared use paths located within 1/4 mile of the project area'''
-videoId = '1la9ebryPWC_0nEWoS2I7r5CAhEXrXk52'
+  * Ensure “Miles” is set as the unit of measurement (in a drop-down menu slightly to the right).
+  * Continue this process until it is clear if there are 0 or 1 or more bicycle lanes and/or shared use paths within 1/4 mile.
+* Select the answer below that corresponds to the number of bicycle lanes and/or shared use paths located within 1/4 mile of the project area.
+'''
+videoId = '1K5qUtMPqAvlCFuPzC5s7mN9oLYOSdGWO'
 hint = ''

@@ -11,13 +11,14 @@ questionInfoIds = [
     'hu-jpa',
     'schools-las-vegas',
     'public-parks-las-vegas',
-    'bus-stops-las-vegas',
+    'bus-stops-rtc',
     'bike-lanes-rtc',
   ],
   [
     'walkability',
     'comfort-level',
     'maps-mini',
+    'shade',
   ],
 ]
 recommendationsInfoId = 'nv-recommendations-info'

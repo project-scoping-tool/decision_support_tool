@@ -2,10 +2,10 @@ questionText = 'What is the level of comfort on the closest collector or arteria
 useUrl = 'Use RTC Ped/Bike Plan Level of Comfort Online Tool'
 url = 'https://rtcsnv.maps.arcgis.com/apps/instant/atlas/index.html?appid=5dc8ccfc889447b7bbc16adaf47380c8&webmap=55a91395767f47cbb8d549bfbbeca5cf'
 answers = [
-  { text = 'Level 4', points = 3.125 },
-  { text = 'Level 3', points = 6.25 },
-  { text = 'Level 2', points = 9.375 },
-  { text = 'Level 1', points = 12.5 },
+  { text = 'Level 4', points = 2.625 },
+  { text = 'Level 3', points = 5.75 },
+  { text = 'Level 2', points = 8.875 },
+  { text = 'Level 1', points = 12.00 },
 ]
 
 answerLeadingHeader = 'Comfort:'
@@ -21,5 +21,5 @@ instructionsMarkdown = '''
   * If multiple colored lines exist, average their Levels of Comfort and round accordingly (0.5 or more rounds up, below 0.5 rounds down).
   * If none exist in the project area, use the measurement tool (ruler with arrows above it) on the top left corner of the screen to locate the closest one and record its Level of Comfort.
 * Select the response with the appropriate Level of Comfort'''
-videoId = '1lZonrx_U5j0n3Lxrio6viZfdm777P9iZ'
+videoId = '1kZQX6qnFdu0INASGg3G2GZ18PFkAdnub'
 hint = ''

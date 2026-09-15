@@ -1,0 +1,28 @@
+questionText = 'What is the level of comfort on the closest collector or arterial roadway segment(s)?'
+useUrl = 'Use RTC Ped/Bike Plan Level of Comfort Online Tool'
+url = 'https://regional-transportation-commission-washoe-open-data-rtcwashoe.hub.arcgis.com/apps/90d59174776548de99c886417492cf44/explore'
+answers = [
+  { text = 'BLTS-4', points = 2.625 },
+  { text = 'BLTS-3', points = 5.75 },
+  { text = 'BLTS-2', points = 8.875 },
+  { text = 'BLTS-1', points = 12.00 },
+]
+
+answerLeadingHeader = 'Comfort:'
+domain = ''
+autoFillEnabled = false
+buttonText = ''
+instructionsMarkdown = '''
+* Click on the link for the Regional Transportation Commission of Washoe Bike Level of Traffic Stress tool, [available here](https://regional-transportation-commission-washoe-open-data-rtcwashoe.hub.arcgis.com/apps/90d59174776548de99c886417492cf44/explore).
+* Click the map layers icon on the left side of the screen and ensure that only Bike Level of Traffic Stress (BLTS) is visible.
+    * To hide a layer, click the eye icon next to the three dots on that layer. An eye icon with a line through it indicates a hidden layer.
+* Enter the project area's address in the text box at the top of the map and press enter.
+* Zoom in (+) and out (-) from the address area using the icons in the upper left corner of the map
+* Find the closest collector or arterial road to the project area. The map legend can be accessed by clicking the top button on the far left side of the screen.
+    * If only one such roadway exists, record its Level of Comfort. 
+    * If multiple colored lines exist, average their Levels of Comfort and round accordingly (0.5 or more rounds up, below 0.5 rounds down).
+    * If none exist in the project area, use the measurement tool (ruler with arrows above it) on the left side of the screen to locate the closest one and record its Level of Comfort.
+* Select the response with the appropriate Level of Comfort 
+'''
+videoId = '1HrfWKP1BER75YRxdso8azkWybmzMrecn'
+hint = ''

@@ -13,19 +13,15 @@ domain = 'Crash'
 autoFillEnabled = true
 buttonText = 'Bicycle Crash'
 instructionsMarkdown = '''
-* Click on the link for Nevada Bicycle Crash Data 2018-2021, [available here](https://experience.arcgis.com/experience/e3fc453ef32d41819135f2b0d6e5c78d).
-* Enter an address within the project area into the search bar and click "Search."
-* Select the "Screening" tool icon under the address search bar. (The button may be hidden by the address search, click anywhere on the map to get it to minimize and reveal the button.)
-* Under "Place Name," re-enter the address in the "Search for a Location" bar.
-* Under "Show Results Within," enter 0.25 miles for Buffer Distance. A red circle with a 0.25 mile radius will appear around the address. You may need to zoom out to see it.
-* Click "Draw" and select draw mode "POLYLINE."
-* Use the POLYLINE tool to draw a line along the project’s exterior perimeter. Left-click at a point on the map to begin drawing. Left-click again at the end of each segment. Double-click to complete the drawing. (Note: this may be different for Mac and PC users.)
-* Click "Report" inside the "Screening" Box.
-* Click on the Gear Icon next to the Print icon. Under "Choose Units of Analysis" make sure the units are "Square Miles" for area and "Miles" for length. Hit Close.
-* Calculate the bicyclist crash density in the area:
-  * Note the number of bicycle crashes in the project's buffer zone. This is displayed in parentheses to the right of "Nevada Bicyclist Crash Data."
-  * Divide the number of bicycle crashes by the buffer zone's area in mi². This area is displayed in the Screening Box above the Gear and Print Icons.
-  * Round to the nearest whole number.
-* Return to the PST to click on the associated range or value.'''
-videoId = '1i35mlRX2CptCeVOJauJP1NdkBJ6eN3Jb'
+* Click on the link for Nevada Pedestrian and Bicyclist Crash Data 2019-2024, available [here](https://experience.arcgis.com/experience/e3fc453ef32d41819135f2b0d6e5c78d).
+* Enter an address within the project area into the search bar on the left top corner of the map and click on the magnifying glass.
+* To properly view the project area, click the minus (–) button located in the top-left corner of the map.
+* Bicycle crashes are represented by red dots on the map. The legend should be visible by scrolling through the sidebar on the bottom right corner.
+* Click the “POLYLINE” tool option from the right sidebar to draw a line along the project's exterior perimeter. Left click at a point on the map to begin drawing. Left click again at the end of each segment. Double-click to complete the drawing. (Note: This may be different for Mac and PC users.)
+* Ensure “0.25” appears in the first box and “miles” appears in the second box on the right sidebar.
+* A blue shape with a 0.25-mile radius will appear around the area. You may need to zoom out to view it fully. 
+* The bicycle crash density should automatically populate on the right-side menu.
+* Return to the PST to select the appropriate range of values within which your density value falls.
+'''
+videoId = '1lK8xJY703WTE5kfYKCR-Zlaz5JiwH5R_'
 hint = ''
