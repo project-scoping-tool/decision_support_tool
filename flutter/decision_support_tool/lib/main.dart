@@ -2,6 +2,7 @@ import 'package:decision_support_tool/data/assessments_repository.dart';
 import 'package:decision_support_tool/data/local_data_service.dart';
 import 'package:decision_support_tool/ui/assessment_app.dart';
 import 'package:decision_support_tool/ui/assessment_view_model.dart';
+import 'package:decision_support_tool/ui/instructions_page.dart';
 import 'package:decision_support_tool/ui/landing_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -59,13 +60,32 @@ class _MainAppState extends State<MainApp> {
       // No `initialRoute` here: on web, Flutter derives the initial route
       // from the actual browser URL (via the path URL strategy set in
       // main()), so a fresh load of "/" shows the landing page and a fresh
-      // load of "/pst" shows the PST tool directly.
+      // load of "/pst" or "/instructions" shows that page directly.
       onGenerateRoute: (settings) {
-        final name = settings.name ?? '/';
-        if (name == '/pst' || name == '/pst/') {
+        // `settings.name` includes the query string (e.g.
+        // "/instructions?jurisdiction=washoe") when path URL strategy is
+        // active, so parsing it as a Uri gives clean access to both.
+        final uri = Uri.parse(settings.name ?? '/');
+        // Normalize a trailing slash (e.g. "/pst/" -> "/pst") so both forms
+        // match the same route.
+        final path = uri.path.length > 1 && uri.path.endsWith('/')
+            ? uri.path.substring(0, uri.path.length - 1)
+            : uri.path;
+
+        if (path == '/pst') {
           return MaterialPageRoute(
             settings: settings,
             builder: (context) => AssessmentApp(viewModel: _assessmentViewModel),
+          );
+        }
+        if (path == '/instructions') {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (context) => InstructionsPage(
+              viewModel: _assessmentViewModel,
+              initialJurisdictionId: uri.queryParameters['jurisdiction'],
+              initialQuestionId: uri.queryParameters['question'],
+            ),
           );
         }
         // '/' and any unrecognized path fall back to the landing page.

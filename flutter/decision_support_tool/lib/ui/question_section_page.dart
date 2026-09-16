@@ -1,11 +1,9 @@
 import 'package:decision_support_tool/data/static_data_models.dart';
 import 'package:decision_support_tool/ui/expanded_section.dart';
+import 'package:decision_support_tool/ui/question_instructions_content.dart';
 import 'package:decision_support_tool/ui/question_section_view_model.dart';
-import 'package:decision_support_tool/ui/video_app.dart';
 import 'package:decision_support_tool/ui/parks_map_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:markdown_widget/widget/markdown_block.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:decision_support_tool/services/parks_query_service.dart';
 import 'package:decision_support_tool/services/adi_query_service.dart';
 import 'package:decision_support_tool/services/parks_map_service.dart';
@@ -211,7 +209,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       child: Column(
         children: [
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
-          _buildProjectAddressInput(), //  Address for auto
+          // _buildProjectAddressInput(), //  Address for auto
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.02)),
           _buildWidgetTableHeader(),
           _buildWidgetTableCells(),
@@ -430,7 +428,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
                 ),
               ),
               TextButton(
-                onPressed: () => _openLink(questionInfo.url),
+                onPressed: () => openExternalLink(questionInfo.url),
                 child: Text(
                   'available here',
                   style: TextStyle(fontSize: fontSize),
@@ -470,7 +468,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
 
           // AUTO-FILL BUTTON
-          _buildWidgetAutoFillButton(questionIndex), // Button for auto
+          // _buildWidgetAutoFillButton(questionIndex), // Button for auto
           // Space
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
           // Row for answers
@@ -559,49 +557,17 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
+  /// Instructions text + video for a question. Shared with the Instructions
+  /// page via [QuestionInstructionsContent] — same widget, same data
+  /// (`instructionsMarkdown` / `videoId` from [QuestionInfo]), so the two
+  /// surfaces can never show different content for the same question.
   Widget _buildWidgetExpandedSectionContents(int questionIndex) {
     final questionInfo = _questionInfos[questionIndex];
-    return Column(
-      children: [
-        _buildWidgetInstructionsText(questionInfo.instructionsMarkdown),
-        _buildWidgetInstructionsVideo(questionInfo.videoId),
-      ],
-    );
-  }
-
-  /// Builds the widget containing the instructions (typically containing
-  /// bulletpoints)
-  Widget _buildWidgetInstructionsText(String markdownData) {
-    const double verticalPadding = 5.0;
-
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: verticalPadding),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0.0),
-              child: MarkdownBlock(data: markdownData),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the widget containing the video player under each set of
-  /// instructions.
-  Widget _buildWidgetInstructionsVideo(String videoId) {
-    return Container(
-      alignment: Alignment.center,
-      padding: EdgeInsets.all(20.0),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.94 * 0.7,
-        height:
-            ((MediaQuery.of(context).size.width * 0.94 * 0.7) / 16.0) * 11.0 +
-            2,
-        child: VideoApp(videoId: videoId),
+      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 48.0),
+      child: QuestionInstructionsContent(
+        questionInfo: questionInfo,
+        videoMaxWidth: MediaQuery.of(context).size.width * 0.94 * 0.7,
       ),
     );
   }
@@ -822,14 +788,6 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
       ],
     );
-  }
-
-  /// Opens a link on the browser.
-  Future<void> _openLink(String url) async {
-    Uri uri = Uri.parse(url);
-    await canLaunchUrl(uri)
-        ? await launchUrl(uri)
-        : throw 'Could not launch $url';
   }
 
   /// Shows a custom dialogue.
