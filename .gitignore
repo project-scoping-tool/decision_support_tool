@@ -1,0 +1,7 @@
+# Legacy generated static site from the old landing/ + pst/ two-app build
+# (retired in favor of flutter/decision_support_tool/build/web/, which is
+# now the complete website). Left in place only because it currently holds
+# the GitHub Pages deploy checkout's .git history — see README.md.
+/site/
+
+.DS_Store

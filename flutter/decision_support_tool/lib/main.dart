@@ -2,12 +2,18 @@ import 'package:decision_support_tool/data/assessments_repository.dart';
 import 'package:decision_support_tool/data/local_data_service.dart';
 import 'package:decision_support_tool/ui/assessment_app.dart';
 import 'package:decision_support_tool/ui/assessment_view_model.dart';
+import 'package:decision_support_tool/ui/landing_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 /// Main entry point function.
 void main() {
+  // Use real paths ("/pst") instead of hash fragments ("/#/pst") for URLs on
+  // web, so the site's URL structure is domain/ -> landing, domain/pst/ ->
+  // the PST tool, both in `flutter run -d chrome` and in a production build.
+  usePathUrlStrategy();
   runApp(MultiProvider(providers: providers, child: MainApp()));
 }
 
@@ -50,9 +56,23 @@ class _MainAppState extends State<MainApp> {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => AssessmentApp(viewModel: _assessmentViewModel),
+      // No `initialRoute` here: on web, Flutter derives the initial route
+      // from the actual browser URL (via the path URL strategy set in
+      // main()), so a fresh load of "/" shows the landing page and a fresh
+      // load of "/pst" shows the PST tool directly.
+      onGenerateRoute: (settings) {
+        final name = settings.name ?? '/';
+        if (name == '/pst' || name == '/pst/') {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (context) => AssessmentApp(viewModel: _assessmentViewModel),
+          );
+        }
+        // '/' and any unrecognized path fall back to the landing page.
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: '/'),
+          builder: (context) => const LandingPage(),
+        );
       },
     );
   }
