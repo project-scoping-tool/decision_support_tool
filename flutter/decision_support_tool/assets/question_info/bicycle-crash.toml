@@ -2,11 +2,11 @@ questionText = 'What is the bicycle crash density in the area? (bicycle crashes/
 useUrl = 'Bicycle Crash - Use bicycle crash data map'
 url = 'https://experience.arcgis.com/experience/e3fc453ef32d41819135f2b0d6e5c78d'
 answers = [
-  { text = '0-4', points = 1.0 },
-  { text = '5-7', points = 2.0 },
-  { text = '8-10', points = 3.0 },
-  { text = '11-15', points = 4.0 },
-  { text = '15+', points = 5.0 },
+  { text = '0-2.15', points = 1.0 },
+  { text = '>2.15-4.92', points = 2.0 },
+  { text = '>4.92-8.92', points = 3.0 },
+  { text = '>8.92-14.77', points = 4.0 },
+  { text = '>14.77-26.49', points = 5.0 },
 ]
 answerLeadingHeader = 'Crashes:'
 domain = 'Crash'

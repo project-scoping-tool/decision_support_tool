@@ -3,11 +3,11 @@ questionText = 'What is the pedestrian crash density in the area? (pedestrian cr
 useUrl = 'Use pedestrian crash data map'
 url = 'https://experience.arcgis.com/experience/e3fc453ef32d41819135f2b0d6e5c78d'
 answers = [
-  { text = '0-8', points = 1.0 },
-  { text = '9-16', points = 2.0 },
-  { text = '17-27', points = 3.0 },
-  { text = '28-47', points = 4.0 },
-  { text = '48+', points = 5.0 },
+  { text = '0-4.61', points = 1.0 },
+  { text = '>4.61-15.08', points = 2.0 },
+  { text = '>15.08-30.78', points = 3.0 },
+  { text = '>30.78-50.80', points = 4.0 },
+  { text = '>50.80-77.6', points = 5.0 },
 ]
 answerLeadingHeader = 'Crashes:'
 domain = 'Crash'

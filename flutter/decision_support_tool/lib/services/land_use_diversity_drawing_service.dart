@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:math' as math;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:decision_support_tool/services/geocoding_service.dart';
+import 'package:decision_support_tool/services/geo_utils.dart';
 
 // ─── EPA class-break model ────────────────────────────────────────────────────
 
-/// One class-break entry fetched live from the EPA SLD renderer.
-/// Mirrors the Python script's BREAKS list: { max, label, fillCss }.
+/// One class-break entry from the local static legend captured at
+/// data_processing/Q6_land_use_diversity/download_land_use_diversity_data.py
+/// time (originally fetched live from the EPA SLD renderer on every use).
 class EpaClassBreak {
   final double maxValue;
   final String label;
-
-  /// Color parsed from the EPA renderer's [R, G, B, A] array —
-  /// identical to the Python rgbaCss() conversion.
   final Color fillColor;
 
   const EpaClassBreak({
@@ -24,24 +23,16 @@ class EpaClassBreak {
 
 // ─── Result model ─────────────────────────────────────────────────────────────
 
-/// Result returned by [LandUseDiversityDrawingService.calculateFromPolygon].
 class LandUseDiversityDrawingResult {
   final int regionCount;
   final String matchedAddress;
   final double lon;
   final double lat;
-
-  /// Simple average of the diversity index, already multiplied by 10.
   final double simpleAverage;
-
-  /// Area-weighted average of the diversity index, already multiplied by 10.
   final double weightedAverage;
-
   final String answer;
   final List<LandUseDiversityRegionInfo> regions;
   final List<List<double>>? drawnPolygon;
-
-  /// Live EPA class breaks (colors + labels) fetched from the renderer.
   final List<EpaClassBreak> classBreaks;
 
   LandUseDiversityDrawingResult({
@@ -58,24 +49,13 @@ class LandUseDiversityDrawingResult {
   });
 }
 
-// ─── Per-region model ─────────────────────────────────────────────────────────
-
-/// Per-region info from the EPA SLD query.
 class LandUseDiversityRegionInfo {
   final String objectId;
-
-  /// Raw EPA value already multiplied by 10 for display and bucketing.
   final double? diversityIndex;
-
-  /// Area of the intersection of this region with the drawn polygon (sq miles).
   final double areaSqMiles;
   final String bucket;
   final double points;
-
-  /// Full region polygon ring as [lon, lat] pairs — used for map rendering.
   final List<List<double>> geometry;
-
-  /// Clipped intersection polygon — may be empty if clip failed.
   final List<List<double>> clippedGeometry;
 
   LandUseDiversityRegionInfo({
@@ -89,441 +69,244 @@ class LandUseDiversityRegionInfo {
   });
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
-
-/// Service that queries the EPA Smart Location Database (SLD) Layer 7
-/// (Land Use Diversity) for a user-drawn polygon and returns an
-/// area-weighted average diversity index to autofill the DST answer.
+/// Service that reads Clark + Washoe County block groups from a local
+/// asset (assets/data/nevada_land_use_diversity.json) instead of querying
+/// the EPA Smart Location Database (SLD) MapServer Layer 7 live.
 ///
-/// The EPA field D2B_E8MIXA stores values in the range ~0–1 (e.g. 0.83),
-/// but the DST answer ranges are 0-2, 2-3, … 9-10 (i.e. scaled ×10).
-/// All raw EPA values are multiplied by 10 before display, bucketing,
-/// and averaging — so 0.62 becomes 6.2, which maps to "6-7".
-///
-/// Colors are fetched live from the EPA renderer endpoint — matching the
-/// Python prototype exactly — rather than being hardcoded.
+/// The local dataset's value field is whatever the EPA renderer resolved
+/// to at download time (see README — it was actually `D2A_EPHHM`, not the
+/// `D2B_E8MIXA` name the previous code's comments described as the
+/// "known fallback"; the live code always trusted the renderer's `field`
+/// over that fallback, so this preserves the actual live behavior, not
+/// the stale comment). Values are ~0-1 and are multiplied by ×10 for
+/// display/bucketing/averaging, unchanged from the previous
+/// implementation — 0.62 -> 6.2 -> "6-7".
 class LandUseDiversityDrawingService {
-  static const String _epaRoot =
-      'https://geodata.epa.gov/arcgis/rest/services/OA/SmartLocationDatabase/MapServer';
-  static const int _layerId = 7; // Land Use Diversity layer
+  static const String _assetPath =
+      'assets/data/nevada_land_use_diversity.json';
 
-  // ─── Public entry point ──────────────────────────────────────────────────────
+  static List<Map<String, dynamic>>? _cachedFeatures;
+  static List<EpaClassBreak>? _cachedClassBreaks;
 
   static Future<LandUseDiversityDrawingResult> calculateFromPolygon({
     required String address,
     required List<List<double>> polygonPoints,
   }) async {
-    print('=== Land Use Diversity Calculation Starting ===');
+    final geocode = await GeocodingService.geocodeAddress(address);
+    final (features, classBreaks) = await _loadLocalData();
 
-    try {
-      // Step 1: Geocode ────────────────────────────────────────────────────────
-      print('Step 1: Geocoding address...');
-      final geocodeResult = await _geocodeAddress(address);
-      final lon = geocodeResult['lon'] as double;
-      final lat = geocodeResult['lat'] as double;
-      final matched = geocodeResult['matched'] as String;
-      print('✔ Geocoded: $matched at ($lon, $lat)');
-
-      // Step 2: Fetch EPA renderer (value field + live colors) ─────────────────
-      print(
-        'Step 2: Fetching EPA renderer (value field + class-break colors)...',
+    final intersecting = _findIntersectingRegions(features, polygonPoints);
+    if (intersecting.isEmpty) {
+      throw Exception(
+        'No EPA regions found inside your drawn area.\n'
+        'Try drawing a larger polygon.',
       );
-      final rendererData = await _fetchRenderer();
-      final valueField = rendererData['valueField'] as String;
-      final classBreaks = rendererData['classBreaks'] as List<EpaClassBreak>;
-      print('✔ Value field: $valueField, ${classBreaks.length} class breaks');
+    }
 
-      // Step 3: Query intersecting EPA regions ─────────────────────────────────
-      print('Step 3: Querying EPA SLD Layer $_layerId...');
-      final epaFeatures = await _fetchIntersectingRegions(
-        polygonPoints,
-        valueField,
-      );
-      print('✔ Found ${epaFeatures.length} intersecting regions');
+    final regionInfoList = <LandUseDiversityRegionInfo>[];
+    double sumIndex = 0.0;
+    int countWithIndex = 0;
+    double weightedSum = 0.0;
+    double totalArea = 0.0;
 
-      // Step 4: Compute area-weighted average ──────────────────────────────────
-      print('Step 4: Computing area-weighted average...');
-      final regionInfoList = <LandUseDiversityRegionInfo>[];
-      double sumIndex = 0.0;
-      int countWithIndex = 0;
-      double weightedSum = 0.0;
-      double totalArea = 0.0;
+    for (final feat in intersecting) {
+      final objectId = feat['geoid'] as String;
+      final rawGeometry = feat['_ring'] as List<List<double>>;
+      final rawVal = feat['value'];
 
-      for (final feat in epaFeatures) {
-        final objectId = feat['objectId'] as String;
-        final rawGeometry = feat['geometry'] as List<List<double>>;
-        final attrs = feat['attributes'] as Map<String, dynamic>;
-
-        // Intersection area
-        final clipped = _clipPolygon(rawGeometry, polygonPoints);
-        final double areaSqMiles;
-        if (clipped.length >= 3) {
-          final shArea = _polygonAreaSqMiles(clipped);
-          final sampledArea = _estimateIntersectionArea(
-            rawGeometry,
-            polygonPoints,
-          );
-          areaSqMiles = (sampledArea > 0 && shArea > sampledArea * 2.5)
-              ? sampledArea
-              : shArea;
-        } else {
-          areaSqMiles = _estimateIntersectionArea(rawGeometry, polygonPoints);
-        }
-
-        // Extract raw EPA value then multiply by 10.
-        // EPA stores D2B_E8MIXA as a decimal ~0-1 (e.g. 0.83).
-        // The DST answer ranges use the ×10 scale (0-2, 2-3, … 9-10),
-        // so 0.83 → 8.3, 0.62 → 6.2, etc.
-        final rawVal = attrs[valueField];
-        double? diversityIndex; // stored as ×10 value
-        if (rawVal != null) {
-          final parsed = double.tryParse(rawVal.toString());
-          if (parsed != null && parsed >= 0) {
-            diversityIndex = parsed * 10.0;
-          }
-        }
-
-        final bucketInfo = _getDstBucket(diversityIndex ?? 0.0);
-
-        regionInfoList.add(
-          LandUseDiversityRegionInfo(
-            objectId: objectId,
-            diversityIndex: diversityIndex, // already ×10
-            areaSqMiles: areaSqMiles,
-            bucket: bucketInfo['bucket'] as String,
-            points: bucketInfo['points'] as double,
-            geometry: rawGeometry,
-            clippedGeometry: clipped,
-          ),
+      final clipped = GeoUtils.clipPolygon(rawGeometry, polygonPoints);
+      double areaSqMiles;
+      if (clipped.length >= 3) {
+        final shArea = GeoUtils.polygonAreaSqMiles(clipped);
+        final sampledArea = GeoUtils.estimateIntersectionAreaSqMiles(
+          rawGeometry,
+          polygonPoints,
         );
-
-        if (diversityIndex != null) {
-          sumIndex += diversityIndex;
-          countWithIndex++;
-          weightedSum += diversityIndex * areaSqMiles;
-          totalArea += areaSqMiles;
-        }
-
-        print(
-          '  Region $objectId: raw=${rawVal}, ×10=${diversityIndex?.toStringAsFixed(2) ?? "N/A"} '
-          '(${areaSqMiles.toStringAsFixed(4)} sq mi)',
+        areaSqMiles = (sampledArea > 0 && shArea > sampledArea * 2.5)
+            ? sampledArea
+            : shArea;
+      } else {
+        areaSqMiles = GeoUtils.estimateIntersectionAreaSqMiles(
+          rawGeometry,
+          polygonPoints,
         );
       }
 
-      // Averages are already in the ×10 scale
-      final simpleAvg = countWithIndex > 0 ? sumIndex / countWithIndex : 0.0;
-      final weightedAvg = totalArea > 0 ? weightedSum / totalArea : 0.0;
-
-      print('✔ Simple average (×10): ${simpleAvg.toStringAsFixed(2)}');
-      print('✔ Area-weighted average (×10): ${weightedAvg.toStringAsFixed(2)}');
-
-      final answer = _getAnswerFromIndex(weightedAvg);
-      print('✔ DST answer: $answer');
-      print('=== Land Use Diversity Calculation Complete ===');
-
-      return LandUseDiversityDrawingResult(
-        regionCount: regionInfoList.length,
-        matchedAddress: matched,
-        lon: lon,
-        lat: lat,
-        simpleAverage: simpleAvg,
-        weightedAverage: weightedAvg,
-        answer: answer,
-        regions: regionInfoList,
-        classBreaks: classBreaks,
-        drawnPolygon: polygonPoints,
-      );
-    } catch (e) {
-      print('Land Use Diversity Calculation Failed: $e');
-      rethrow;
-    }
-  }
-
-  // ─── EPA renderer fetch ───────────────────────────────────────────────────────
-
-  /// Fetches the EPA SLD Layer 7 renderer in a single request and returns:
-  ///   - 'valueField': the attribute field that holds the diversity index.
-  ///   - 'classBreaks': list of [EpaClassBreak] with live colors + labels.
-  ///
-  /// Mirrors the Python loadRenderer() function exactly:
-  ///   - Reads renderer.field for the value field.
-  ///   - Maps classBreakInfos[i].symbol.color ([R,G,B,A]) to Flutter Color,
-  ///     identical to Python's rgbaCss([R,G,B,A]).
-  ///   - Sorts breaks ascending by maxValue.
-  static Future<Map<String, dynamic>> _fetchRenderer() async {
-    final url = Uri.parse('$_epaRoot/$_layerId?f=json');
-    final response = await http.get(url);
-    if (response.statusCode != 200) {
-      throw Exception('EPA layer info failed: HTTP ${response.statusCode}');
-    }
-
-    final info = jsonDecode(response.body) as Map<String, dynamic>;
-    final renderer =
-        (info['drawingInfo'] as Map<String, dynamic>?)?['renderer']
-            as Map<String, dynamic>?;
-
-    // Value field
-    String valueField = 'D2B_E8MIXA'; // known fallback for Layer 7
-    if (renderer != null) {
-      final f = renderer['field'] as String? ?? renderer['field1'] as String?;
-      if (f != null && f.isNotEmpty) valueField = f;
-    }
-
-    // Class breaks → Colors
-    // Python: BREAKS = classBreaks.map(cb => ({
-    //   max: cb.classMaxValue,
-    //   label: cb.label,
-    //   fillCss: rgbaCss(cb.symbol.color)   // [R,G,B,A]
-    // })).sort((a,b) => a.max - b.max)
-    final breaks = <EpaClassBreak>[];
-    if (renderer != null) {
-      final rawBreaks = renderer['classBreakInfos'] as List? ?? [];
-      for (final cb in rawBreaks) {
-        final m = cb as Map<String, dynamic>;
-        final maxVal = (m['classMaxValue'] as num?)?.toDouble();
-        if (maxVal == null) continue;
-
-        final label = m['label'] as String? ?? maxVal.toString();
-
-        // Python rgbaCss([R,G,B,A]): alpha = A/255
-        final colorArr =
-            (m['symbol'] as Map<String, dynamic>?)?['color'] as List?;
-        final Color fillColor;
-        if (colorArr != null && colorArr.length >= 3) {
-          final r = (colorArr[0] as num).toInt();
-          final g = (colorArr[1] as num).toInt();
-          final b = (colorArr[2] as num).toInt();
-          final a = colorArr.length >= 4 ? (colorArr[3] as num).toInt() : 255;
-          fillColor = Color.fromARGB(a, r, g, b);
-        } else {
-          fillColor = const Color(0xFFDDDDDD); // same fallback as Python
-        }
-
-        breaks.add(
-          EpaClassBreak(maxValue: maxVal, label: label, fillColor: fillColor),
-        );
+      double? diversityIndex;
+      if (rawVal != null) {
+        final parsed = (rawVal as num).toDouble();
+        if (parsed >= 0) diversityIndex = parsed * 10.0;
       }
-      // Sort ascending — mirrors Python .sort((a,b) => a.max - b.max)
-      breaks.sort((a, b) => a.maxValue.compareTo(b.maxValue));
+
+      final bucketInfo = _getDstBucket(diversityIndex ?? 0.0);
+
+      regionInfoList.add(
+        LandUseDiversityRegionInfo(
+          objectId: objectId,
+          diversityIndex: diversityIndex,
+          areaSqMiles: areaSqMiles,
+          bucket: bucketInfo['bucket'] as String,
+          points: bucketInfo['points'] as double,
+          geometry: rawGeometry,
+          clippedGeometry: clipped,
+        ),
+      );
+
+      if (diversityIndex != null) {
+        sumIndex += diversityIndex;
+        countWithIndex++;
+        weightedSum += diversityIndex * areaSqMiles;
+        totalArea += areaSqMiles;
+      }
     }
 
-    if (breaks.isEmpty) {
-      print('  Warning: no class breaks in EPA renderer, colors will be grey.');
-    }
+    final simpleAvg = countWithIndex > 0 ? sumIndex / countWithIndex : 0.0;
+    final weightedAvg = totalArea > 0 ? weightedSum / totalArea : 0.0;
+    final answer = _getAnswerFromIndex(weightedAvg);
 
-    return {'valueField': valueField, 'classBreaks': breaks};
+    return LandUseDiversityDrawingResult(
+      regionCount: regionInfoList.length,
+      matchedAddress: geocode.matchedAddress,
+      lon: geocode.lon,
+      lat: geocode.lat,
+      simpleAverage: simpleAvg,
+      weightedAverage: weightedAvg,
+      answer: answer,
+      regions: regionInfoList,
+      classBreaks: classBreaks,
+      drawnPolygon: polygonPoints,
+    );
   }
 
-  // ─── EPA query ────────────────────────────────────────────────────────────────
+  // ── Local asset loading ───────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> _fetchIntersectingRegions(
-    List<List<double>> polygon,
-    String valueField,
-  ) async {
-    final arcGeometry = _toArcgisPolygon(polygon);
-
-    final params = {
-      'f': 'json',
-      'where': '1=1',
-      'outFields': '*',
-      'returnGeometry': 'true',
-      'geometryType': 'esriGeometryPolygon',
-      'geometry': jsonEncode(arcGeometry),
-      'inSR': '4326',
-      'outSR': '4326',
-      'spatialRel': 'esriSpatialRelIntersects',
-      'resultRecordCount': '5000',
-    };
-
-    final url = Uri.parse(
-      '$_epaRoot/$_layerId/query',
-    ).replace(queryParameters: params);
-
-    final response = await http.get(url);
-    if (response.statusCode != 200) {
-      throw Exception('EPA query failed: HTTP ${response.statusCode}');
+  static Future<(List<Map<String, dynamic>>, List<EpaClassBreak>)>
+  _loadLocalData() async {
+    if (_cachedFeatures != null && _cachedClassBreaks != null) {
+      return (_cachedFeatures!, _cachedClassBreaks!);
     }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    if (data.containsKey('error')) {
-      throw Exception('EPA query error: ${data['error']}');
+    final jsonString = await rootBundle.loadString(_assetPath);
+    final data = jsonDecode(jsonString) as Map<String, dynamic>;
+
+    final classBreaks = <EpaClassBreak>[];
+    for (final cb in (data['classBreaks'] as List)) {
+      final m = cb as Map<String, dynamic>;
+      final colorArr = m['color'] as List;
+      final r = (colorArr[0] as num).toInt();
+      final g = (colorArr[1] as num).toInt();
+      final b = (colorArr[2] as num).toInt();
+      final a = colorArr.length >= 4 ? (colorArr[3] as num).toInt() : 255;
+      classBreaks.add(
+        EpaClassBreak(
+          maxValue: (m['max'] as num).toDouble(),
+          label: m['label'] as String,
+          fillColor: Color.fromARGB(a, r, g, b),
+        ),
+      );
     }
 
-    final features = data['features'] as List? ?? [];
-    if (features.isEmpty) {
-      throw Exception('No EPA regions returned. Try drawing a larger polygon.');
-    }
-
-    final result = <Map<String, dynamic>>[];
-    for (final feat in features) {
-      final f = feat as Map<String, dynamic>;
-      final geomRaw = f['geometry'] as Map<String, dynamic>?;
-      final attrs = f['attributes'] as Map<String, dynamic>? ?? {};
-
-      if (geomRaw == null) continue;
-      final rings = geomRaw['rings'] as List?;
-      if (rings == null || rings.isEmpty) continue;
-
-      final ring = rings[0] as List;
-      final coords = ring
+    final rawFeatures = data['features'] as List;
+    final features = <Map<String, dynamic>>[];
+    for (final raw in rawFeatures) {
+      final f = raw as Map<String, dynamic>;
+      final rawRings = f['rings'] as List?;
+      if (rawRings == null || rawRings.isEmpty) continue;
+      final ring = (rawRings[0] as List)
           .map<List<double>>(
-            (pt) => [(pt as List)[0].toDouble(), pt[1].toDouble()],
+            (p) => [(p[0] as num).toDouble(), (p[1] as num).toDouble()],
           )
           .toList();
-
-      final objectId =
-          attrs['OBJECTID']?.toString() ??
-          attrs['GEOID20']?.toString() ??
-          attrs['GEOID']?.toString() ??
-          '?';
-
-      result.add({
-        'objectId': objectId,
-        'geometry': coords,
-        'attributes': attrs,
+      features.add({
+        'geoid': (f['geoid'] ?? '?').toString(),
+        'value': f['diversityIndex'],
+        '_ring': ring,
       });
     }
-    return result;
+
+    _cachedFeatures = features;
+    _cachedClassBreaks = classBreaks;
+    return (features, classBreaks);
   }
 
-  // ─── Geometry helpers (mirrors BikingRateDrawingService) ─────────────────────
+  // ── Intersection detection (mirrors WalkingRateDrawingService) ────────────
 
-  static Map<String, dynamic> _toArcgisPolygon(List<List<double>> polygon) {
-    final ring = polygon.map((pt) => [pt[0], pt[1]]).toList();
-    if (ring.isNotEmpty) {
-      final first = ring.first, last = ring.last;
-      if (first[0] != last[0] || first[1] != last[1]) {
-        ring.add([first[0], first[1]]);
-      }
-    }
-    return {
-      'rings': [ring],
-      'spatialReference': {'wkid': 4326},
-    };
-  }
-
-  static List<List<double>> _clipPolygon(
-    List<List<double>> subject,
-    List<List<double>> clip,
+  static List<Map<String, dynamic>> _findIntersectingRegions(
+    List<Map<String, dynamic>> features,
+    List<List<double>> drawnPolygon,
   ) {
-    if (subject.isEmpty || clip.isEmpty) return subject;
-    List<List<double>> output = List.from(subject);
-    final n = clip.length;
-    for (int i = 0; i < n - 1; i++) {
-      if (output.isEmpty) return [];
-      final A = clip[i], B = clip[i + 1];
-      final input = output;
-      output = [];
-      for (int j = 0; j < input.length; j++) {
-        final cur = input[j];
-        final prev = input[(j + input.length - 1) % input.length];
-        final curIn = _side(cur, A, B);
-        final prevIn = _side(prev, A, B);
-        if (curIn) {
-          if (!prevIn) output.add(_intersect(prev, cur, A, B));
-          output.add(cur);
-        } else if (prevIn) {
-          output.add(_intersect(prev, cur, A, B));
-        }
-      }
-    }
-    return output;
-  }
-
-  static bool _side(List<double> p, List<double> a, List<double> b) =>
-      (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= 0;
-
-  static List<double> _intersect(
-    List<double> a,
-    List<double> b,
-    List<double> c,
-    List<double> d,
-  ) {
-    final a1 = b[1] - a[1], b1 = a[0] - b[0], c1 = a1 * a[0] + b1 * a[1];
-    final a2 = d[1] - c[1], b2 = c[0] - d[0], c2 = a2 * c[0] + b2 * c[1];
-    final det = a1 * b2 - a2 * b1;
-    if (det.abs() < 1e-10) return a;
-    return [(b2 * c1 - b1 * c2) / det, (a1 * c2 - a2 * c1) / det];
-  }
-
-  /// Shoelace formula, converted to sq miles (approx for Clark County ~36N).
-  static double _polygonAreaSqMiles(List<List<double>> poly) {
-    if (poly.length < 3) return 0.0;
-    double sum = 0.0;
-    final n = poly.length;
-    for (int i = 0; i < n; i++) {
-      final j = (i + 1) % n;
-      sum += poly[i][0] * poly[j][1] - poly[j][0] * poly[i][1];
-    }
-    return sum.abs() / 2.0 * 69.0 * 55.0;
-  }
-
-  /// Fallback area estimate via grid sampling when Sutherland-Hodgman fails.
-  static double _estimateIntersectionArea(
-    List<List<double>> regionPoly,
-    List<List<double>> drawnPoly,
-  ) {
-    if (regionPoly.length < 3 || drawnPoly.length < 3) return 0.0;
-
-    double tMinX = regionPoly[0][0], tMaxX = regionPoly[0][0];
-    double tMinY = regionPoly[0][1], tMaxY = regionPoly[0][1];
-    for (final p in regionPoly) {
-      if (p[0] < tMinX) tMinX = p[0];
-      if (p[0] > tMaxX) tMaxX = p[0];
-      if (p[1] < tMinY) tMinY = p[1];
-      if (p[1] > tMaxY) tMaxY = p[1];
-    }
-
-    double dMinX = drawnPoly[0][0], dMaxX = drawnPoly[0][0];
-    double dMinY = drawnPoly[0][1], dMaxY = drawnPoly[0][1];
-    for (final p in drawnPoly) {
+    double dMinX = drawnPolygon[0][0], dMaxX = drawnPolygon[0][0];
+    double dMinY = drawnPolygon[0][1], dMaxY = drawnPolygon[0][1];
+    for (final p in drawnPolygon) {
       if (p[0] < dMinX) dMinX = p[0];
       if (p[0] > dMaxX) dMaxX = p[0];
       if (p[1] < dMinY) dMinY = p[1];
       if (p[1] > dMaxY) dMaxY = p[1];
     }
 
-    final minX = math.max(tMinX, dMinX);
-    final maxX = math.min(tMaxX, dMaxX);
-    final minY = math.max(tMinY, dMinY);
-    final maxY = math.min(tMaxY, dMaxY);
-    if (minX >= maxX || minY >= maxY) return 0.0;
+    final result = <Map<String, dynamic>>[];
+    for (final feat in features) {
+      final ring = feat['_ring'] as List<List<double>>;
+      if (ring.isEmpty) continue;
 
-    const gridN = 50;
-    int inside = 0;
-    final dx = (maxX - minX) / gridN;
-    final dy = (maxY - minY) / gridN;
-    for (int ix = 0; ix < gridN; ix++) {
-      for (int iy = 0; iy < gridN; iy++) {
-        final x = minX + (ix + 0.5) * dx;
-        final y = minY + (iy + 0.5) * dy;
-        if (_pointInPolygon(x, y, regionPoly) &&
-            _pointInPolygon(x, y, drawnPoly)) {
-          inside++;
-        }
+      double tMinX = ring[0][0], tMaxX = ring[0][0];
+      double tMinY = ring[0][1], tMaxY = ring[0][1];
+      for (final p in ring) {
+        if (p[0] < tMinX) tMinX = p[0];
+        if (p[0] > tMaxX) tMaxX = p[0];
+        if (p[1] < tMinY) tMinY = p[1];
+        if (p[1] > tMaxY) tMaxY = p[1];
+      }
+
+      if (tMaxX < dMinX || tMinX > dMaxX || tMaxY < dMinY || tMinY > dMaxY) {
+        continue;
+      }
+
+      if (_polygonsIntersect(ring, drawnPolygon)) {
+        result.add(feat);
       }
     }
-    final cellAreaSqMiles = (dx * 69.0) * (dy * 55.0);
-    return inside * cellAreaSqMiles;
+    return result;
   }
 
-  static bool _pointInPolygon(double x, double y, List<List<double>> poly) {
-    bool inside = false;
-    for (int i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      final xi = poly[i][0], yi = poly[i][1];
-      final xj = poly[j][0], yj = poly[j][1];
-      if (((yi > y) != (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
-        inside = !inside;
+  static bool _polygonsIntersect(List<List<double>> a, List<List<double>> b) {
+    for (final p in a) {
+      if (GeoUtils.pointInPolygon(p[0], p[1], b)) return true;
+    }
+    for (final p in b) {
+      if (GeoUtils.pointInPolygon(p[0], p[1], a)) return true;
+    }
+    for (int i = 0; i < a.length - 1; i++) {
+      for (int j = 0; j < b.length - 1; j++) {
+        if (_segmentsIntersect(a[i], a[i + 1], b[j], b[j + 1])) return true;
       }
     }
-    return inside;
+    return false;
   }
 
-  // ─── Buckets ──────────────────────────────────────────────────────────────────
-  // [index] is already multiplied by 10.
-  // Boundary rule: if average == boundary, choose the lower interval
-  // (e.g. exactly 2.0 -> "0-2", not "2-3").
+  static bool _segmentsIntersect(
+    List<double> p1,
+    List<double> p2,
+    List<double> p3,
+    List<double> p4,
+  ) {
+    final d1 = _cross(p3, p4, p1);
+    final d2 = _cross(p3, p4, p2);
+    final d3 = _cross(p1, p2, p3);
+    final d4 = _cross(p1, p2, p4);
+    if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+        ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+      return true;
+    }
+    return false;
+  }
+
+  static double _cross(List<double> o, List<double> a, List<double> b) =>
+      (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+
+  // ── Buckets ──────────────────────────────────────────────────────────────────
+  // [index] is already multiplied by 10. Boundary rule: exactly on a
+  // boundary chooses the lower interval (e.g. 2.0 -> "0-2", not "2-3").
 
   static Map<String, dynamic> _getDstBucket(double index) {
     if (index <= 2.0) return {'bucket': '0-2', 'points': 1.0};
@@ -549,37 +332,8 @@ class LandUseDiversityDrawingService {
     return '9-10';
   }
 
-  // ─── Geocode ──────────────────────────────────────────────────────────────────
-
-  static Future<Map<String, dynamic>> _geocodeAddress(String address) async {
-    final url = Uri.parse(
-      'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates',
-    );
-    final params = {
-      'f': 'json',
-      'singleLine': address,
-      'outFields': 'Match_addr,Addr_type',
-      'maxLocations': '1',
-    };
-    final response = await http.get(
-      url.replace(queryParameters: params),
-      headers: {'Accept': 'application/json'},
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Geocoding failed: HTTP ${response.statusCode}');
-    }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final candidates = data['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) {
-      throw Exception('No geocoding results for: $address');
-    }
-    final best = candidates[0] as Map<String, dynamic>;
-    final location = best['location'] as Map<String, dynamic>?;
-    if (location == null) throw Exception('No location in geocoding result');
-    return {
-      'lon': (location['x'] as num).toDouble(),
-      'lat': (location['y'] as num).toDouble(),
-      'matched': (best['address'] as String?) ?? address,
-    };
+  static void clearCache() {
+    _cachedFeatures = null;
+    _cachedClassBreaks = null;
   }
 }

@@ -82,8 +82,15 @@ flutter:
     - assets/data/nevada_adi_data.json
     - assets/data/crashes_bicyclist.csv
     - assets/data/crashes_pedestrian.csv
-    - assets/data/clark_county_biking_rate.json
+    - assets/data/nevada_biking_rate.json
+    - assets/data/nevada_walking_rate.json
     - assets/data/clark_county_schools.json
+    - assets/data/clark_county_bus_stops.json
+    - assets/data/clark_county_parks.json
+    - assets/data/clark_county_bike_lanes.json
+    - assets/data/nevada_land_use_diversity.json
+    - assets/data/nevada_activity_density.json
+    - assets/data/nevada_walkability_index.json
     - assets/images/roadmap.png
 
   # An image asset can refer to one or more resolution-specific "variants", see

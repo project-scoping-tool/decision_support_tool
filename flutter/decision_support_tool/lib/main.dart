@@ -1,3 +1,4 @@
+import 'package:decision_support_tool/config.dart';
 import 'package:decision_support_tool/data/assessments_repository.dart';
 import 'package:decision_support_tool/data/local_data_service.dart';
 import 'package:decision_support_tool/ui/assessment_app.dart';
@@ -11,9 +12,10 @@ import 'package:provider/single_child_widget.dart';
 
 /// Main entry point function.
 void main() {
-  // Use real paths ("/pst") instead of hash fragments ("/#/pst") for URLs on
-  // web, so the site's URL structure is domain/ -> landing, domain/pst/ ->
-  // the PST tool, both in `flutter run -d chrome` and in a production build.
+  // Use real paths (e.g. "/pst") instead of hash fragments ("/#/pst") for
+  // URLs on web, so the site's URL structure is domain/ -> landing,
+  // domain/<toolExtension>/ -> the PST tool (see config.dart), both in
+  // `flutter run -d chrome` and in a production build.
   usePathUrlStrategy();
   runApp(MultiProvider(providers: providers, child: MainApp()));
 }
@@ -59,8 +61,10 @@ class _MainAppState extends State<MainApp> {
       debugShowCheckedModeBanner: false,
       // No `initialRoute` here: on web, Flutter derives the initial route
       // from the actual browser URL (via the path URL strategy set in
-      // main()), so a fresh load of "/" shows the landing page and a fresh
-      // load of "/pst" or "/instructions" shows that page directly.
+      // main()), so a fresh load of "/" shows the landing page (or the PST
+      // tool, if `landingPageEnabled` is false — see config.dart) and a
+      // fresh load of "<toolExtension>" or "/instructions" shows that page
+      // directly.
       onGenerateRoute: (settings) {
         // `settings.name` includes the query string (e.g.
         // "/instructions?jurisdiction=washoe") when path URL strategy is
@@ -72,12 +76,6 @@ class _MainAppState extends State<MainApp> {
             ? uri.path.substring(0, uri.path.length - 1)
             : uri.path;
 
-        if (path == '/pst') {
-          return MaterialPageRoute(
-            settings: settings,
-            builder: (context) => AssessmentApp(viewModel: _assessmentViewModel),
-          );
-        }
         if (path == '/instructions') {
           return MaterialPageRoute(
             settings: settings,
@@ -88,6 +86,17 @@ class _MainAppState extends State<MainApp> {
             ),
           );
         }
+
+        // The PST tool always answers at `toolExtension`. When there's no
+        // separate landing page configured, it also answers at every other
+        // path (including "/"), since there's nothing else to route to.
+        if (path == toolExtension || !landingPageEnabled) {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (context) => AssessmentApp(viewModel: _assessmentViewModel),
+          );
+        }
+
         // '/' and any unrecognized path fall back to the landing page.
         return MaterialPageRoute(
           settings: const RouteSettings(name: '/'),

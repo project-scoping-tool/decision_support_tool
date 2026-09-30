@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:decision_support_tool/services/geo_utils.dart';
 
 class ParksMapData {
   final double lon;
@@ -17,141 +18,76 @@ class ParksMapData {
   });
 }
 
+/// Builds the map overlay for the parks result dialog from the same local
+/// dataset ParksQueryService counts against, instead of a live ArcGIS
+/// query. See data_processing/Q9_public_parks/README.md.
 class ParksMapService {
-  static const String _arcgisPortal = "https://www.arcgis.com";
-  static const String _itemId = "7b483a11c0b3489d8ce7601081872f99";
+  static const String _assetPath = 'assets/data/clark_county_parks.json';
   static const double _bufferMiles = 0.5;
-  static const int _maxFeaturesToDraw = 2000;
 
-  // static const String? _arcgisApiKey = null;
-  static const String? _arcgisToken = null;
+  static List<Map<String, dynamic>>? _cachedFeatures;
 
-  /// Get map data for displaying parks
+  /// Get map data for displaying parks. [layerId] is the "best" layer
+  /// ParksQueryService picked for this address; only that layer's parks
+  /// within the buffer are drawn, matching the previous live behavior.
   static Future<ParksMapData> getMapData({
     required double lon,
     required double lat,
     required String matchedAddress,
     required int layerId,
   }) async {
-    try {
-      final serviceUrl = await _resolveFeatureServiceUrl(_itemId);
-      final layerUrl = '${serviceUrl.trimRight()}/$layerId';
-      final features = await _queryFeatures(
-        layerUrl,
-        lon,
-        lat,
-        _bufferMiles,
-        _maxFeaturesToDraw,
-      );
+    final features = await _loadFeatures();
 
-      return ParksMapData(
-        lon: lon,
-        lat: lat,
-        matchedAddress: matchedAddress,
-        parkFeatures: features,
-        layerId: layerId,
-      );
-    } catch (e) {
-      throw Exception('Error getting map data: $e');
-    }
-  }
-
-  static Future<String> _resolveFeatureServiceUrl(String itemId) async {
-    final itemUrl = Uri.parse(
-      '$_arcgisPortal/sharing/rest/content/items/$itemId',
-    );
-    final params = {'f': 'json'};
-    if (_arcgisToken != null) {
-      params['token'] = _arcgisToken!;
-    }
-
-    final response = await http.get(itemUrl.replace(queryParameters: params));
-    _checkResponse(response);
-
-    final item = jsonDecode(response.body) as Map<String, dynamic>;
-    _checkError(item);
-
-    if (item['url'] != null) {
-      return item['url'] as String;
-    }
-
-    final dataUrl = Uri.parse(
-      '$_arcgisPortal/sharing/rest/content/items/$itemId/data',
-    );
-    final dataResponse = await http.get(
-      dataUrl.replace(queryParameters: params),
-    );
-    _checkResponse(dataResponse);
-
-    final webmap = jsonDecode(dataResponse.body) as Map<String, dynamic>;
-    _checkError(webmap);
-
-    final operationalLayers = webmap['operationalLayers'] as List?;
-    if (operationalLayers != null) {
-      for (final layer in operationalLayers) {
-        final layerMap = layer as Map<String, dynamic>;
-        final url = layerMap['url'] as String?;
-        if (url != null &&
-            (url.contains('MapServer') || url.contains('FeatureServer'))) {
-          return url;
-        }
+    final result = <Map<String, dynamic>>[];
+    for (final f in features) {
+      if (f['layerId'] != layerId) continue;
+      final ring = f['ring'] as List<List<double>>;
+      if (GeoUtils.distanceMilesToPolygon(lon, lat, ring) > _bufferMiles) {
+        continue;
       }
+      result.add({
+        'geometry': {
+          'rings': [ring],
+        },
+        'attributes': {'NAME': f['name']},
+      });
     }
 
-    throw Exception('Could not resolve a service URL from this item');
+    return ParksMapData(
+      lon: lon,
+      lat: lat,
+      matchedAddress: matchedAddress,
+      parkFeatures: result,
+      layerId: layerId,
+    );
   }
 
-  static Future<List<Map<String, dynamic>>> _queryFeatures(
-    String layerUrl,
-    double lon,
-    double lat,
-    double miles,
-    int maxCount,
-  ) async {
-    final qurl = Uri.parse('${layerUrl.trimRight()}/query');
-    final params = {
-      'f': 'json',
-      'where': '1=1',
-      'outFields': '*',
-      'returnGeometry': 'true',
-      'geometryType': 'esriGeometryPoint',
-      'geometry': '$lon,$lat',
-      'inSR': '4326',
-      'spatialRel': 'esriSpatialRelIntersects',
-      'distance': miles.toString(),
-      'units': 'esriSRUnit_StatuteMile',
-      'resultRecordCount': maxCount.toString(),
-      'outSR': '4326',
-    };
+  static Future<List<Map<String, dynamic>>> _loadFeatures() async {
+    if (_cachedFeatures != null) return _cachedFeatures!;
+    final jsonString = await rootBundle.loadString(_assetPath);
+    final data = jsonDecode(jsonString) as Map<String, dynamic>;
+    final rawFeatures = (data['features'] as List).cast<Map<String, dynamic>>();
 
-    if (_arcgisToken != null) {
-      params['token'] = _arcgisToken!;
+    final features = <Map<String, dynamic>>[];
+    for (final f in rawFeatures) {
+      final rawRings = f['rings'] as List?;
+      if (rawRings == null || rawRings.isEmpty) continue;
+      final ring = (rawRings[0] as List)
+          .map<List<double>>(
+            (p) => [(p[0] as num).toDouble(), (p[1] as num).toDouble()],
+          )
+          .toList();
+      features.add({
+        'layerId': (f['layerId'] as num).toInt(),
+        'name': f['name'],
+        'ring': ring,
+      });
     }
-
-    final response = await http.get(qurl.replace(queryParameters: params));
-    _checkResponse(response);
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    _checkError(data);
-
-    final features = data['features'] as List?;
-    if (features == null) {
-      return [];
-    }
-
-    return features.map((f) => f as Map<String, dynamic>).toList();
+    _cachedFeatures = features;
+    return features;
   }
 
-  static void _checkResponse(http.Response response) {
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
-    }
-  }
-
-  static void _checkError(Map<String, dynamic> data) {
-    if (data.containsKey('error')) {
-      final error = data['error'];
-      throw Exception('ArcGIS error: $error');
-    }
+  static void clearCache() {
+    _cachedFeatures = null;
   }
 }

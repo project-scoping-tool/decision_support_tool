@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:decision_support_tool/services/geo_utils.dart';
 
 class SchoolsMapData {
   final double lon;
@@ -17,352 +18,82 @@ class SchoolsMapData {
   });
 }
 
+/// Builds the map overlay for the schools result dialog from the same local
+/// dataset SchoolsQueryService counts against, instead of a live ArcGIS
+/// query. See data_processing/Q8/README.md.
 class SchoolsMapService {
-  static const String _arcgisPortal = "https://www.arcgis.com";
-  static const String _itemId = "ca9eba42cebc4b0c965ffe80a3923978";
-  static const double _bufferMiles = 0.5; // 1/2 mile
-  static const int _maxFeaturesToDraw = 2000;
+  static const String _assetPath = 'assets/data/clark_county_schools.json';
+  static const double _bufferMiles = 0.5;
 
-  static const String? _arcgisToken = null;
+  static List<Map<String, dynamic>>? _cachedFeatures;
 
-  /// Get map data for displaying schools
   static Future<SchoolsMapData> getMapData({
     required double lon,
     required double lat,
     required String matchedAddress,
     required int layerId,
   }) async {
-    try {
-      final serviceUrl = await _resolveFeatureServiceUrl(_itemId);
-      print('Map service URL: $serviceUrl');
+    final features = await _loadLocalData();
 
-      // Get all layers
-      final layers = await _listLayers(serviceUrl);
-
-      // Try the provided layerId first, then try all layers
-      List<Map<String, dynamic>> features = [];
-      int workingLayerId = layerId;
-
-      if (layers.isNotEmpty) {
-        print('Trying provided layer ID: $layerId');
-
-        // Try the provided layer first
-        final layerUrl = '${serviceUrl.trimRight()}/$layerId';
-        try {
-          features = await _queryFeatures(
-            layerUrl,
-            lon,
-            lat,
-            _bufferMiles,
-            _maxFeaturesToDraw,
-          );
-          print(
-            '✓ Success with provided layer $layerId: ${features.length} features',
-          );
-        } catch (e) {
-          print('✗ Provided layer $layerId failed: $e');
-
-          // Try all layers
-          for (final layer in layers) {
-            final tryLayerId = (layer['id'] as num).toInt();
-            final tryLayerUrl = '${serviceUrl.trimRight()}/$tryLayerId';
-
-            print('Trying layer $tryLayerId: ${layer['name']}');
-
-            try {
-              features = await _queryFeatures(
-                tryLayerUrl,
-                lon,
-                lat,
-                _bufferMiles,
-                _maxFeaturesToDraw,
-              );
-              if (features.isNotEmpty || tryLayerId == layerId) {
-                workingLayerId = tryLayerId;
-                print(
-                  '✓ Success with layer $tryLayerId: ${features.length} features',
-                );
-                break;
-              }
-            } catch (e) {
-              print('✗ Layer $tryLayerId failed: $e');
-              continue;
-            }
-          }
-        }
-      } else {
-        // No layers, try service URL directly
-        print('No layers found, trying service directly');
-        features = await _queryFeatures(
-          serviceUrl,
-          lon,
-          lat,
-          _bufferMiles,
-          _maxFeaturesToDraw,
-        );
+    final result = <Map<String, dynamic>>[];
+    for (final f in features) {
+      final ring = f['ring'] as List<List<double>>;
+      if (GeoUtils.distanceMilesToPolygon(lon, lat, ring) > _bufferMiles) {
+        continue;
       }
 
-      return SchoolsMapData(
-        lon: lon,
-        lat: lat,
-        matchedAddress: matchedAddress,
-        schoolFeatures: features,
-        layerId: workingLayerId,
-      );
-    } catch (e) {
-      print('Error in getMapData: $e');
-      throw Exception('Error getting schools map data: $e');
-    }
-  }
+      final attrs = {'NAME': f['name']};
 
-  static Future<String> _resolveFeatureServiceUrl(String itemId) async {
-    final itemUrl = Uri.parse(
-      '$_arcgisPortal/sharing/rest/content/items/$itemId',
+      // Boundary polygon.
+      result.add({
+        'geometry': {
+          'rings': [ring],
+        },
+        'attributes': attrs,
+      });
+      // Icon marker at centroid, inside the polygon.
+      result.add({
+        'geometry': {'x': f['lon'], 'y': f['lat']},
+        'attributes': attrs,
+      });
+    }
+
+    return SchoolsMapData(
+      lon: lon,
+      lat: lat,
+      matchedAddress: matchedAddress,
+      schoolFeatures: result,
+      layerId: layerId,
     );
-    final params = {'f': 'json'};
-    if (_arcgisToken != null) {
-      params['token'] = _arcgisToken!;
-    }
-
-    final response = await http.get(itemUrl.replace(queryParameters: params));
-    _checkResponse(response);
-
-    final item = jsonDecode(response.body) as Map<String, dynamic>;
-    _checkError(item);
-
-    if (item['url'] != null) {
-      return item['url'] as String;
-    }
-
-    final dataUrl = Uri.parse(
-      '$_arcgisPortal/sharing/rest/content/items/$itemId/data',
-    );
-    final dataResponse = await http.get(
-      dataUrl.replace(queryParameters: params),
-    );
-    _checkResponse(dataResponse);
-
-    final webmap = jsonDecode(dataResponse.body) as Map<String, dynamic>;
-    _checkError(webmap);
-
-    final operationalLayers = webmap['operationalLayers'] as List?;
-    if (operationalLayers != null) {
-      for (final layer in operationalLayers) {
-        final layerMap = layer as Map<String, dynamic>;
-        final url = layerMap['url'] as String?;
-        if (url != null &&
-            (url.contains('MapServer') || url.contains('FeatureServer'))) {
-          return url;
-        }
-      }
-    }
-
-    throw Exception('Could not resolve a service URL from this item');
   }
 
-  static Future<List<Map<String, dynamic>>> _listLayers(
-    String serviceUrl,
-  ) async {
-    final params = {'f': 'json'};
-    if (_arcgisToken != null) {
-      params['token'] = _arcgisToken!;
+  static Future<List<Map<String, dynamic>>> _loadLocalData() async {
+    if (_cachedFeatures != null) return _cachedFeatures!;
+    final jsonString = await rootBundle.loadString(_assetPath);
+    final data = jsonDecode(jsonString) as Map<String, dynamic>;
+    final rawFeatures = (data['features'] as List).cast<Map<String, dynamic>>();
+
+    final features = <Map<String, dynamic>>[];
+    for (final f in rawFeatures) {
+      final rawRings = f['rings'] as List?;
+      if (rawRings == null || rawRings.isEmpty) continue;
+      final ring = (rawRings[0] as List)
+          .map<List<double>>(
+            (p) => [(p[0] as num).toDouble(), (p[1] as num).toDouble()],
+          )
+          .toList();
+      features.add({
+        'name': f['name'],
+        'lon': (f['lon'] as num).toDouble(),
+        'lat': (f['lat'] as num).toDouble(),
+        'ring': ring,
+      });
     }
-
-    try {
-      final response = await http.get(
-        Uri.parse(serviceUrl.trimRight()).replace(queryParameters: params),
-      );
-      _checkResponse(response);
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      _checkError(data);
-
-      final layers = data['layers'] as List?;
-      if (layers == null) {
-        return [];
-      }
-
-      return layers.map((l) => l as Map<String, dynamic>).toList();
-    } catch (e) {
-      print('Error listing layers: $e');
-      return [];
-    }
+    _cachedFeatures = features;
+    return features;
   }
 
-  static Future<List<Map<String, dynamic>>> _queryFeatures(
-    String layerUrl,
-    double lon,
-    double lat,
-    double miles,
-    int maxCount,
-  ) async {
-    final qurl = Uri.parse('${layerUrl.trimRight()}/query');
-    final params = {
-      'f': 'json',
-      'where': '1=1',
-      'outFields': '*',
-      'returnGeometry': 'true',
-      'geometryType': 'esriGeometryPoint',
-      'geometry': '$lon,$lat',
-      'inSR': '4326',
-      'spatialRel': 'esriSpatialRelIntersects',
-      'distance': miles.toString(),
-      'units': 'esriSRUnit_StatuteMile',
-      'resultRecordCount': maxCount.toString(),
-      'outSR': '4326',
-    };
-
-    if (_arcgisToken != null) {
-      params['token'] = _arcgisToken!;
-    }
-
-    final response = await http.get(qurl.replace(queryParameters: params));
-
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}');
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (data.containsKey('error')) {
-      final error = data['error'];
-      final code = error['code'];
-
-      // 404 means wrong layer
-      if (code == 404 || error.toString().contains('Feature not found')) {
-        throw Exception('Wrong layer (404)');
-      }
-
-      throw Exception('ArcGIS error: $error');
-    }
-
-    final features = data['features'] as List?;
-    if (features == null) {
-      return [];
-    }
-
-    return features.map((f) => f as Map<String, dynamic>).toList();
-  }
-
-  static void _checkResponse(http.Response response) {
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
-    }
-  }
-
-  static void _checkError(Map<String, dynamic> data) {
-    if (data.containsKey('error')) {
-      final error = data['error'];
-      throw Exception('ArcGIS error: $error');
-    }
+  static void clearCache() {
+    _cachedFeatures = null;
   }
 }
-
-// import 'dart:convert';
-// import 'dart:math' as math;
-// import 'package:flutter/services.dart' show rootBundle;
-
-// class SchoolsMapData {
-//   final double lon;
-//   final double lat;
-//   final String matchedAddress;
-//   final List<Map<String, dynamic>> schoolFeatures;
-//   final int layerId;
-
-//   SchoolsMapData({
-//     required this.lon,
-//     required this.lat,
-//     required this.matchedAddress,
-//     required this.schoolFeatures,
-//     required this.layerId,
-//   });
-// }
-
-// class SchoolsMapService {
-//   static const String _assetPath = 'assets/data/clark_county_schools.json';
-//   static const double _bufferMiles = 0.5;
-
-//   static List<Map<String, dynamic>>? _cachedFeatures;
-
-//   static Future<SchoolsMapData> getMapData({
-//     required double lon,
-//     required double lat,
-//     required String matchedAddress,
-//     required int layerId,
-//   }) async {
-//     final features = await _loadLocalData();
-
-//     final result = <Map<String, dynamic>>[];
-//     for (final f in features) {
-//       final flon = (f['lon'] as num).toDouble();
-//       final flat = (f['lat'] as num).toDouble();
-//       if (_distanceMiles(lat, lon, flat, flon) > _bufferMiles) continue;
-
-//       final type = f['type'] as String;
-//       final attrs = {
-//         'NAME': f['name'],
-//         ...(f['attributes'] as Map<String, dynamic>? ?? {}),
-//       };
-
-//       if (type == 'Polygon') {
-//         // Boundary polygon
-//         result.add({
-//           'geometry': {'rings': f['rings']},
-//           'attributes': attrs,
-//         });
-//         // Icon marker at centroid, inside the polygon
-//         result.add({
-//           'geometry': {'x': flon, 'y': flat},
-//           'attributes': attrs,
-//         });
-//       } else {
-//         // Point-only school: just the icon
-//         result.add({
-//           'geometry': {'x': flon, 'y': flat},
-//           'attributes': attrs,
-//         });
-//       }
-//     }
-
-//     return SchoolsMapData(
-//       lon: lon,
-//       lat: lat,
-//       matchedAddress: matchedAddress,
-//       schoolFeatures: result,
-//       layerId: layerId,
-//     );
-//   }
-
-//   static Future<List<Map<String, dynamic>>> _loadLocalData() async {
-//     if (_cachedFeatures != null) return _cachedFeatures!;
-//     final jsonString = await rootBundle.loadString(_assetPath);
-//     final data = jsonDecode(jsonString) as Map<String, dynamic>;
-//     _cachedFeatures = (data['features'] as List).cast<Map<String, dynamic>>();
-//     return _cachedFeatures!;
-//   }
-
-//   static double _distanceMiles(
-//     double lat1,
-//     double lon1,
-//     double lat2,
-//     double lon2,
-//   ) {
-//     const earthRadiusMiles = 3958.8;
-//     final dLat = _deg2rad(lat2 - lat1);
-//     final dLon = _deg2rad(lon2 - lon1);
-//     final a =
-//         math.sin(dLat / 2) * math.sin(dLat / 2) +
-//         math.cos(_deg2rad(lat1)) *
-//             math.cos(_deg2rad(lat2)) *
-//             math.sin(dLon / 2) *
-//             math.sin(dLon / 2);
-//     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-//     return earthRadiusMiles * c;
-//   }
-
-//   static double _deg2rad(double deg) => deg * (math.pi / 180.0);
-
-//   static void clearCache() {
-//     _cachedFeatures = null;
-//   }
-// }

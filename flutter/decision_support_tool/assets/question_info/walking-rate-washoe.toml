@@ -17,7 +17,7 @@ instructionsMarkdown = '''
 *   The map is already set to show Washoe County, Nevada. 
   * Be sure to use the most current time period for which data is available (click on "Year" above the map to verify)
 * Zoom in and out, as needed, to find the approximate project area by clicking on the plus and minus signs near the top right corner
-  * If experiencing difficulty, try locating the project area by zooming in and visually scanning for the Census Tract number. Tract numbers for a given area can be located by searching the Census Geocoder and locating the “Name” under “Census Tracts” in the search result.
+  * If experiencing difficulty, try locating the project area by zooming in and visually scanning for the Census Tract number. Tract numbers for a given area can be located by searching the [Census Geocoder](https://geocoding.geo.census.gov/geocoder/geographies/address?form) and locating the “Name” under “Census Tracts” in the search result.
 * Click within a Census Tract to reveal the rate percentile of walking to work within that tract
   * Be sure to identify the percent who walk to work, not the Census Tract number
   * Click the "X" in the corner of the legend to deselect and choose another Tract

@@ -10,7 +10,7 @@ autoFillEnabled = true
 buttonText = 'Bus Stops'
 # TODO: Update link in the instructions as well
 instructionsMarkdown = '''
-* Click on the Google Earth link (LINK)
+* Click on the Google Earth link, available [here](https://earth.google.com/web/@0,0,0a,22251752.77375655d,35y,0h,0t,0r).
 * In the search box above the map view on the top left of the screen, enter the address for the project area.
 * Click the “Save to project” text
   * A small window will pop up. Select “Local KML file” to save the marker on the selected address.

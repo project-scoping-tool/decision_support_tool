@@ -1,3 +1,4 @@
+import 'package:decision_support_tool/config.dart';
 import 'package:decision_support_tool/data/static_data_models.dart';
 import 'package:decision_support_tool/ui/expanded_section.dart';
 import 'package:decision_support_tool/ui/question_instructions_content.dart';
@@ -163,6 +164,14 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
   double get _screenWidth => MediaQuery.of(context).size.width;
   double get _screenHeight => MediaQuery.of(context).size.height;
 
+  /// AppBar title text, keyed by section: Step 1 assesses existing need,
+  /// Step 2 assesses existing infrastructure.
+  static const _sectionTitles = [
+    "Step 1:     Assess Area's Existing Need",
+    "Step 2:     Assess Existing Infrastructure",
+  ];
+  String get _sectionTitle => _sectionTitles[widget.sectionIndex];
+
   static Color _getCellBgColor(int questionIndex) {
     return _cellBgColors[questionIndex % 2];
   }
@@ -194,7 +203,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Step 1:     Assess Area's Existing Need"),
+            Text(_sectionTitle),
             Text('Jurisdiction:     $_jurisdiction'),
           ],
         ),
@@ -209,7 +218,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
       child: Column(
         children: [
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.05)),
-          // _buildProjectAddressInput(), //  Address for auto
+          if (enableAutoFillFeatures) _buildProjectAddressInput(),
           Padding(padding: EdgeInsets.only(top: _screenHeight * 0.02)),
           _buildWidgetTableHeader(),
           _buildWidgetTableCells(),
@@ -468,7 +477,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
 
           // AUTO-FILL BUTTON
-          // _buildWidgetAutoFillButton(questionIndex), // Button for auto
+          if (enableAutoFillFeatures) _buildWidgetAutoFillButton(questionIndex),
           // Space
           Container(padding: EdgeInsets.only(top: _screenHeight * 0.01)),
           // Row for answers
@@ -790,7 +799,8 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     );
   }
 
-  /// Shows a custom dialogue.
+  /// Shows the "Selected Infrastructure" recommendation dialog once the
+  /// last question section is fully answered.
   void _showCustomDialog() {
     const fontSize = 16.0;
     final recommendation = _viewModel.getInfrastructureRecommendation();
@@ -799,105 +809,119 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     // Log the recommended value
     print('Recommended Infrastructure: $recommended');
 
-    AlertDialog dialog = AlertDialog(
-      titlePadding: EdgeInsets.zero,
-      title: Align(
-        alignment: Alignment.centerRight,
-        child: InkWell(
-          hoverColor: Colors.grey,
-          highlightColor: Colors.grey[700],
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: Container(
-            padding: EdgeInsets.all(5.0),
-            child: Icon(Icons.close, color: Colors.red, size: 20.0),
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
           ),
-        ),
-      ),
-      contentPadding: EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 20.0),
-      content: Container(
-        width: _screenWidth * 0.4,
-        height: _screenHeight * 0.2,
-        decoration: BoxDecoration(
-          shape: BoxShape.rectangle,
-          color: const Color(0xFFFFFF),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(color: Colors.white),
-                    child: Text(
-                      'Selected Infrastructure',
-                      style: TextStyle(color: Colors.black, fontSize: 20.0),
-                      textAlign: TextAlign.center,
-                    ),
+          // A generous but non-fixed outer margin: the dialog's actual
+          // width is still driven by the ConstrainedBox below, so this
+          // just keeps it off the viewport edges on narrow screens without
+          // wasting space the way the default 40px each side would.
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 24.0,
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(24.0, 20.0, 12.0, 0.0),
+          title: Row(
+            children: [
+              Icon(Icons.recommend, color: Colors.green[700], size: 26.0),
+              const SizedBox(width: 10.0),
+              const Expanded(
+                child: Text(
+                  'Selected Infrastructure',
+                  style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
+                ),
               ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Close',
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+            ],
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 8.0),
+          // maxWidth caps the dialog on large desktop screens; on narrower
+          // viewports the surrounding AlertDialog/insetPadding constraints
+          // are tighter and win instead, so this never forces overflow.
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440.0),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: EdgeInsets.only(top: 15.0),
-                    child: Text(
-                      'Based on Steps 1 & 2, below is the selected recommendation to pursue.',
-                      style: TextStyle(fontSize: fontSize),
-                    ),
-                  ),
-                ],
-              ),
-              flex: 1,
-            ),
-            Expanded(
-              child: Align(
-                alignment: Alignment.center,
-                child: Container(
-                  padding: EdgeInsets.only(top: 5.0),
-                  child: Text(
-                    recommended,
+                  Text(
+                    'Based on Steps 1 & 2, below is the selected recommendation to pursue.',
                     style: TextStyle(
-                      fontSize: 24.0,
-                      fontWeight: FontWeight.bold,
+                      fontSize: fontSize,
+                      color: Colors.grey[800],
+                      height: 1.4,
                     ),
                   ),
+                  const SizedBox(height: 20.0),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16.0,
+                      horizontal: 16.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(8.0),
+                      border: Border.all(
+                        color: Colors.green[300]!,
+                        width: 2.0,
+                      ),
+                    ),
+                    child: Text(
+                      recommended,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[900],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 20.0),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _viewModel.goToNextPage();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 147, 88, 255),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 12.0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
-              flex: 1,
-            ),
-            Container(
-              padding: EdgeInsets.only(top: 10.0),
-              alignment: Alignment.bottomRight,
-              child: ColoredBox(
-                color: Colors.blue[300]!,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _viewModel.goToNextPage();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(10.0),
-                    child: Text(
-                      'Continue to Step 3',
-                      style: TextStyle(fontSize: fontSize, color: Colors.black),
-                    ),
-                  ),
-                ),
+              child: const Text(
+                'Continue to Step 3',
+                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
               ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
-
-    showDialog(context: context, builder: (BuildContext context) => dialog);
   }
 
   /// Build auto-fill button for parks question
@@ -933,11 +957,11 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         onPressed = () => _fetchParksCount(questionIndex);
         break;
 
-      case 'Bus Stops': // S1-Q10
-        buttonText = 'Auto-fill from Bus Stop Data';
-        buttonIcon = Icons.directions_bus;
-        onPressed = () => _fetchBusStopsCount(questionIndex);
-        break;
+      // case 'Bus Stops': // S1-Q10
+      //   buttonText = 'Auto-fill from Bus Stop Data';
+      //   buttonIcon = Icons.directions_bus;
+      //   onPressed = () => _fetchBusStopsCount(questionIndex);
+      //   break;
 
       case 'Bike Lanes': // S1-Q11
         buttonText = 'Auto-fill from Bike Lane Data';
@@ -985,11 +1009,11 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         onPressed = () => _openActivityDensityDrawing(questionIndex);
         break;
 
-      // case 'Walkability Index': // S2-Q1
-      //   buttonText = 'Draw Area & Calculate Walkability Score';
-      //   buttonIcon = Icons.directions_walk;
-      //   onPressed = () => _openWalkabilityDrawing(questionIndex);
-      //   break;
+      case 'Walkability Index': // S2-Q1
+        buttonText = 'Draw Area & Calculate Walkability Score';
+        buttonIcon = Icons.directions_walk;
+        onPressed = () => _openWalkabilityDrawing(questionIndex);
+        break;
 
       default:
         debugPrint(

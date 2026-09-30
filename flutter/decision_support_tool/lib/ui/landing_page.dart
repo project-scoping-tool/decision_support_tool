@@ -1,3 +1,4 @@
+import 'package:decision_support_tool/config.dart';
 import 'package:decision_support_tool/ui/site_footer.dart';
 import 'package:decision_support_tool/ui/site_header.dart';
 import 'package:decision_support_tool/ui/site_theme.dart';
@@ -5,8 +6,9 @@ import 'package:decision_support_tool/ui/site_widgets.dart';
 import 'package:flutter/material.dart';
 
 /// Landing page shown at the site root ('/'). '/instructions' shows the
-/// jurisdiction-specific Instructions page; '/pst' shows the existing PST
-/// tool ([AssessmentApp]) instead — see the routing in main.dart.
+/// jurisdiction-specific Instructions page; [toolExtension] shows the
+/// existing PST tool ([AssessmentApp]) instead — see the routing in
+/// main.dart and the flag/path in config.dart.
 ///
 /// Content is reproduced from the verified PST/DST project pages
 /// (https://pst.rtcsnv.com/intro/ and the UNLV DST Google Site). Nothing
@@ -16,7 +18,7 @@ class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
   void _openTool(BuildContext context) {
-    Navigator.of(context).pushNamed('/pst');
+    Navigator.of(context).pushNamed(toolExtension);
   }
 
   @override

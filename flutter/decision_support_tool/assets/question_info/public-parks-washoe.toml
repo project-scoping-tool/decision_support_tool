@@ -1,7 +1,7 @@
 
 questionText = 'How many public parks are in the project area or within ½ mile radius?'
 useUrl = 'Use Washoe County Open Data'
-url = 'https://explore-washoe.opendata.arcgis.com/datasets/3e28'
+url = 'https://explore-washoe.opendata.arcgis.com/datasets/3e28c14fca6c495d8cc674089643e6d8_6/explore?location=40.457250%2C-119.697500%2C7'
 answers = [
   { text = '0', points = 0.0 },
   { text = '1', points = 1.0 },
@@ -12,7 +12,7 @@ domain = 'Connectivity'
 autoFillEnabled = false
 buttonText = 'Parks'
 instructionsMarkdown = '''
-* Click on the link for the Washoe County Open Data & Transparency Portal, [available here](https://explore-washoe.opendata.arcgis.com/datasets/3e28).
+* Click on the link for the Washoe County Open Data & Transparency Portal, [available here](https://explore-washoe.opendata.arcgis.com/datasets/3e28c14fca6c495d8cc674089643e6d8_6/explore?location=40.457250%2C-119.697500%2C7).
 * Click "OK" on the opening disclaimer, if it appears.
 * Public parks appear blue on the map. To view the legend, click the "Legend" icon located just below the magnifying glass icon on the right side of the map.
 * Click on the magnifying glass icon in the top right, then enter the address of the project area into the search bar and hit enter.

@@ -1,23 +1,22 @@
-questionText = 'What is the level of bus service within a quarter mile of the project area, considering how often buses come and whether riders have shade while they wait?'
-useUrl = 'Use the RTC Bus Stop map,'
-url = 'https://experience.arcgis.com/experience/f15ba91713984502b5fb5becca64464f'
+questionText = 'What is the level of bus service within a quarter mile of the project area?'
+useUrl = 'Use the PST Bus Stop Information map,'
+url = 'https://experience.arcgis.com/experience/bbe926c3bd4b42cbb599b4417664b87d?draft=true'
 answers = [
-  { text = '0-.75', points = 0.0 },
-  { text = '0.76-1.5', points = 1.0 },
-  { text = '1.6-2', points = 2.0 }
+  { text = '0', points = 0.0 },
+  { text = '1', points = 1.0 },
   ]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
 autoFillEnabled = true
 buttonText = 'Bus Stops'
 instructionsMarkdown = '''
-* Click the link for the RTC Bus Stop map, available [here](https://experience.arcgis.com/experience/f15ba91713984502b5fb5becca64464f).
+* Click the link for the PST Bus Stop Information map, available [here](https://experience.arcgis.com/experience/bbe926c3bd4b42cbb599b4417664b87d?draft=true).
 * In the search box on the top left of the map, enter the address for the project area and click on the magnifying glass or press enter.
 * Zoom in and out (as needed) using the (+) and (-) buttons on the top left of the map.
 * Use the “Draw Area” button on the right sidebar to draw the shape of the project area.
   * Left click at a point on the map to begin drawing. Left click again at the end of each segment. Double-click to complete the drawing. (Note: This may be different for Mac and PC users.)
   * The bus stop accessibility score will appear in a blue box on the right toolbar.
-* Enter the answer below that corresponds to the number of parks located within ½ mile of the project area.
+* Enter the answer below that corresponds to the level of bus service.
 '''
 videoId = '1-c5E25TSebN_3inZxxgYGgwjpCXezn7u'
 hint = ''

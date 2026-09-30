@@ -1,7 +1,7 @@
 
 questionText = 'How many schools – public and private – are in the area and within a ½-mile radius?'
 useUrl = 'Use Washoe County Open Data'
-url = 'https://explore-washoe.opendata.arcgis.com/'
+url = 'https://explore-washoe.opendata.arcgis.com/datasets/810b04e0f9134a76bdc1c9e5ffb86f98_134/explore?location=39.949900%2C-119.649350%2C8'
 answers = [
   { text = '0', points = 0.0 },
   { text = '1', points = 1.0 },
@@ -12,7 +12,7 @@ domain = 'Connectivity'
 autoFillEnabled = false
 buttonText = 'Schools'
 instructionsMarkdown = '''
-* Click on the link for the Washoe County Open Data & Transparency Portal, [available here](https://explore-washoe.opendata.arcgis.com/).
+* Click on the link for the Washoe County Open Data & Transparency Portal, [available here](https://explore-washoe.opendata.arcgis.com/datasets/810b04e0f9134a76bdc1c9e5ffb86f98_134/explore?location=39.949900%2C-119.649350%2C8).
 * Click "OK" on the opening disclaimer, if it appears.
 * Schools are shown as blue dots on the map. To view the legend, click the "Legend" icon located just below the magnifying glass icon on the right side of the map.
 * Click on the magnifying glass icon in the top right, then enter the address of the project area into the search bar and hit enter.

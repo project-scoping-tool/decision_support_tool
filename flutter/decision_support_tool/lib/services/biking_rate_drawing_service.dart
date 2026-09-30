@@ -565,11 +565,12 @@ class TractInfo {
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 /// Biking-rate service that reads tract geometry + ACS rates from a local
-/// asset file (assets/data/clark_county_biking_rate.json) instead of calling
+/// asset file (assets/data/nevada_biking_rate.json) instead of calling
 /// the Census API at runtime.
 ///
-/// The asset file is built once by running:
-///   python3 download_biking_rate_data.py
+/// The asset file covers Clark + Washoe counties (every jurisdiction the
+/// PST app supports) and is built once by running:
+///   python3 data_processing/Q2/download_biking_rate_data.py
 ///
 /// File format (GeoJSON FeatureCollection):
 /// {
@@ -579,6 +580,7 @@ class TractInfo {
 ///     "properties": {
 ///       "GEOID":    "32003510800",
 ///       "TRACTCE":  "510800",
+///       "COUNTYFP": "003",
 ///       "NAME":     "51.08",
 ///       "bikeRate": 0.7          // % who bike to work; null if suppressed
 ///     },
@@ -586,7 +588,7 @@ class TractInfo {
 ///   }, ...]
 /// }
 class BikingRateDrawingService {
-  static const String _assetPath = 'assets/data/clark_county_biking_rate.json';
+  static const String _assetPath = 'assets/data/nevada_biking_rate.json';
 
   /// Cache – loaded once per app session.
   static List<Map<String, dynamic>>? _cachedFeatures;

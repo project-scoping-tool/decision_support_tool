@@ -12,10 +12,24 @@ The Decision Support Tool (DST) is a tool for planning, public works and transpo
 /pst/   -> PST tool        (lib/ui/assessment_app.dart, unchanged)
 ```
 
-This is implemented entirely in `flutter/decision_support_tool/lib/main.dart`:
-- `usePathUrlStrategy()` (from `flutter_web_plugins`) makes web URLs real paths (`/pst`) instead of hash fragments (`/#/pst`).
-- `onGenerateRoute` maps `/pst` and `/pst/` to the existing `AssessmentApp` (completely unmodified — same widgets, same view models, same services), and everything else (`/`, and any unrecognized path) to `LandingPage`.
-- The landing page CTA calls `Navigator.pushNamed(context, '/pst')` — a `push`, not a replace, so the browser Back button correctly returns to the landing page.
+`/pst` above is the *default* — both whether there's a landing page at all,
+and what path the tool is served at, are centrally configurable in
+`flutter/decision_support_tool/lib/config.dart`:
+
+```dart
+const bool landingPageEnabled = true;  // false: '/' opens the PST tool directly
+const String toolExtension = '/pst';   // e.g. '/tool', '/decision-support'
+```
+
+- `landingPageEnabled = true` (default): `/` shows the landing page, the
+  tool is at `toolExtension`.
+- `landingPageEnabled = false`: `/` opens the PST tool directly — no need
+  to visit `toolExtension` first (it still works too, if visited).
+
+This is implemented entirely in `flutter/decision_support_tool/lib/main.dart`, which reads both constants rather than hardcoding a path — `landing_page.dart` and `site_header.dart` do the same for their "Open Tool" links:
+- `usePathUrlStrategy()` (from `flutter_web_plugins`) makes web URLs real paths (e.g. `/pst`) instead of hash fragments (`/#/pst`).
+- `onGenerateRoute` maps `toolExtension` (with or without a trailing slash) to the existing `AssessmentApp` (completely unmodified — same widgets, same view models, same services). When `landingPageEnabled` is `false`, every other path (including `/`) also maps to `AssessmentApp`; otherwise `/` and any unrecognized path map to `LandingPage`. `/instructions` is unaffected by either setting.
+- The landing page CTA calls `Navigator.pushNamed(context, toolExtension)` — a `push`, not a replace, so the browser Back button correctly returns to the landing page.
 
 `flutter/decision_support_tool/web/index.html` has one addition, a `<base href="$FLUTTER_BASE_HREF">` tag, needed so compiled asset paths resolve correctly; it defaults to `/` (root) for this deployment.
 
@@ -28,7 +42,7 @@ cd flutter/decision_support_tool
 flutter run -d chrome
 ```
 
-Opens Chrome directly to the landing page at `/`, with full hot reload (`r`) and hot restart (`R`) support — verified working: editing `landing_page.dart` or any PST source file while running updates the app in place without losing state or changing the URL. Click "Open Project Scoping Tool" to navigate to `/pst/` (URL updates, no server round-trip); the browser Back button returns to the landing page.
+Opens Chrome directly to the landing page at `/` (or the PST tool, if `landingPageEnabled` is `false` — see [Site Architecture](#site-architecture)), with full hot reload (`r`) and hot restart (`R`) support — verified working: editing `landing_page.dart` or any PST source file while running updates the app in place without losing state or changing the URL. Click "Open Project Scoping Tool" to navigate to the configured tool path (URL updates, no server round-trip); the browser Back button returns to the landing page.
 
 This is now the *only* local dev command — it exercises the real site structure directly, so there's no separate "full site" vs. "Flutter only" mode to choose between anymore.
 
@@ -41,9 +55,9 @@ flutter build web --release
 
 `build/web/` is the complete, deployable website — landing page and PST tool both included, nothing else to assemble. Verified present: `main.dart.js`, `flutter_bootstrap.js`, `flutter_service_worker.js`, `canvaskit/` (wasm renderer), all `assets/assets/question_info/*.toml`, `assets/assets/data/*.csv`/`*.json`, and fonts.
 
-### SPA fallback (required for direct navigation to `/pst/`)
+### SPA fallback (required for direct navigation to the tool path)
 
-Because `/pst/` only exists as a client-side Flutter route (there's no real `build/web/pst/index.html` file), a **fresh page load** at `/pst/` — a bookmark, a shared link, or a hard refresh — depends on the web server serving `index.html`'s content for that path instead of a 404. `flutter run`'s dev server does this automatically (verified). Static hosts like GitHub Pages and Apache do not, by default, and need one extra step each:
+Because the PST tool's path (`/pst/` by default — see [Site Architecture](#site-architecture), configurable via `toolExtension` in `config.dart`) only exists as a client-side Flutter route (there's no real `build/web/pst/index.html` file), a **fresh page load** at that path — a bookmark, a shared link, or a hard refresh — depends on the web server serving `index.html`'s content for that path instead of a 404. `flutter run`'s dev server does this automatically (verified). Static hosts like GitHub Pages and Apache do not, by default, and need one extra step each. **None of the server-side config below depends on what `toolExtension` is set to** — it falls back to `index.html` for *any* unmatched path, so changing `toolExtension` needs no deployment changes.
 
 **GitHub Pages** has no rewrite rules, but it does serve a custom `404.html` for any unmatched path (with an HTTP 404 status, but the browser still executes the page). Making `404.html` an exact copy of `index.html` turns that into a working SPA fallback: the app boots, reads the real `window.location.pathname` (`/pst/`), and renders the right route. **Verified locally** with a test server that mimics GitHub Pages' behavior (serves real files normally, falls back to `404.html` content — with a 404 status — for anything else): `/`, direct navigation to `/pst/`, and all asset categories (JS, canvaskit/wasm, service worker, fonts, `question_info` TOML, crash CSV/JSON) all loaded correctly through the fallback.
 
@@ -71,7 +85,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ /index.html [L]
 ```
 
-Either directive, scoped to the site's document root, makes any unmatched path (`/pst`, `/pst/`, a refresh mid-assessment, etc.) serve `index.html` so Flutter's client-side router can take over — the same effect the GitHub Pages `404.html` trick achieves without rewrite support.
+Either directive, scoped to the site's document root, makes any unmatched path (the tool path, a refresh mid-assessment, etc.) serve `index.html` so Flutter's client-side router can take over — the same effect the GitHub Pages `404.html` trick achieves without rewrite support.
 
 ## GitHub Pages Deployment
 
@@ -102,7 +116,7 @@ cd flutter/decision_support_tool
 flutter build web --release
 ```
 
-Copy the contents of `build/web/` to the Apache document root (e.g. via `scp`/`rsync`, however UNLV/OIT provisions the server), and see [SPA fallback](#spa-fallback-required-for-direct-navigation-to-pst) above for the server-side config that deployment will eventually need for `/pst/` to survive a direct visit or refresh.
+Copy the contents of `build/web/` to the Apache document root (e.g. via `scp`/`rsync`, however UNLV/OIT provisions the server), and see [SPA fallback](#spa-fallback-required-for-direct-navigation-to-the-tool-path) above for the server-side config that deployment will eventually need for the tool path to survive a direct visit or refresh.
 
 ## Requirements and Installation
 This code was developed on a Windows 10 machine usi ng [Visual Studio Code](https://code.visualstudio.com/).

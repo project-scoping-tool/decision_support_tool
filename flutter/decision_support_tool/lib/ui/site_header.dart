@@ -1,3 +1,4 @@
+import 'package:decision_support_tool/config.dart';
 import 'package:decision_support_tool/ui/site_theme.dart';
 import 'package:decision_support_tool/ui/site_widgets.dart';
 import 'package:flutter/material.dart';
@@ -112,7 +113,7 @@ class SiteHeader extends StatelessWidget {
   Widget _openToolButton(BuildContext context) {
     return FocusableButton(
       label: 'Open Tool',
-      onPressed: () => goToSiteRoute(context, '/pst'),
+      onPressed: () => goToSiteRoute(context, toolExtension),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       fontSize: 14,
     );
