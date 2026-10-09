@@ -119,6 +119,11 @@ class QuestionSectionViewModel {
   /// Select an answer
   void selectAnswer(int questionIndex, int? selectedAnswerIndex) {
     _selectedAnswerIndices[questionIndex].value = selectedAnswerIndex;
+    // This answer's points feed into step1Points/step2Points, which the
+    // infrastructure recommendation is computed from — invalidate the
+    // cached recommendation so the next read recomputes it, instead of
+    // returning a value based on the answer that was just replaced.
+    _assessmentsViewModel.clearRecommendationCache();
   }
 
   /// Expand/collapse instructions

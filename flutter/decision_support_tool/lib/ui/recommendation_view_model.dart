@@ -86,94 +86,56 @@ class RecommendationsViewModel {
       ),
   ];
 
-  /// Step 1 label - lazily evaluated
-  late final String step1Label = _pointsToLabelStep1(
-    _assessmentsViewModel.step1Points,
-  );
+  /// Step 1 label — always reflects the current step1Points, using the same
+  /// Low/Medium/High boundaries ([classifyNeedLevel]) the recommendation
+  /// itself is computed from.
+  String get step1Label =>
+      switch (classifyNeedLevel(_assessmentsViewModel.step1Points)) {
+        NeedLevel.low => 'Low Need',
+        NeedLevel.medium => 'Medium Need',
+        NeedLevel.high => 'High Need',
+      };
 
-  /// Step 2 label - lazily evaluated
-  late final String step2Label = _pointsToLabelStep2(
+  /// Step 2 label — always reflects the current step2Points, using the same
+  /// Below/Average/Above Average boundaries ([classifyInfrastructureLevel])
+  /// the recommendation itself is computed from.
+  String get step2Label => switch (classifyInfrastructureLevel(
     _assessmentsViewModel.step2Points,
-  );
+  )) {
+    InfrastructureLevel.belowAverage => 'Below Average',
+    InfrastructureLevel.average => 'Average',
+    InfrastructureLevel.aboveAverage => 'Above Average',
+  };
 
-  /// Infrastructure recommendation - lazily evaluated when first accessed
-  late final ({int recommendedCode, String recommendedText})
-  infrastructureRecommendation = _getRecommendation();
+  /// Infrastructure recommendation. Delegates straight to
+  /// [AssessmentViewModel.getInfrastructureRecommendation], which caches
+  /// and invalidates itself whenever a Step 1/2 answer changes — so this
+  /// always reflects the current answers without a second, independent
+  /// cache here that could go stale on its own.
+  ({int recommendedCode, String recommendedText})
+  get infrastructureRecommendation =>
+      _assessmentsViewModel.getInfrastructureRecommendation();
 
-  /// True to highlight good column
-  bool isHighlightingGoodColumn = false;
+  /// Notified whenever any Step 1 or Step 2 answer changes. Used by
+  /// [RecommendationsPage] to rebuild when the user edits an earlier
+  /// answer and returns to this page, so the displayed recommendation/
+  /// labels/highlighting stay in sync with [infrastructureRecommendation].
+  late final Listenable answersChanged = Listenable.merge([
+    for (final questionSectionViewModel
+        in _assessmentsViewModel.questionSectionViewModels)
+      questionSectionViewModel.anyAnswerChanged,
+  ]);
 
-  /// True to highlight better column
-  bool isHighlightingBetterColumn = false;
-
-  /// True to highlight best column
-  bool isHighlightingBestColumn = false;
-
-  /// Private method to get and cache the recommendation
-  ({int recommendedCode, String recommendedText}) _getRecommendation() {
-    print('=== EVALUATING RECOMMENDATION (lazy late final) ===');
-    final recommendation = _assessmentsViewModel
-        .getInfrastructureRecommendation();
-    print('Recommendation Code: ${recommendation.recommendedCode}');
-    print('Recommendation Text: ${recommendation.recommendedText}');
-
-    // Determine highlight based on recommendation
-    //   0: Minimal (none)
-    //   1: Good
-    //   2: Better
-    //   3: Best
-    //   4: >= Good
-    //   5: >= Better
-    switch (recommendation.recommendedCode) {
-      case 1:
-        isHighlightingGoodColumn = true;
-        break;
-      case 2:
-        isHighlightingBetterColumn = true;
-        break;
-      case 3:
-        isHighlightingBestColumn = true;
-        break;
-      case 4:
-        isHighlightingGoodColumn = true;
-        isHighlightingBetterColumn = true;
-        isHighlightingBestColumn = true;
-        break;
-      case 5:
-        isHighlightingBetterColumn = true;
-        isHighlightingBestColumn = true;
-        break;
-    }
-
-    // print('Highlighting Good Column: $isHighlightingGoodColumn');
-    // print('Highlighting Better Column: $isHighlightingBetterColumn');
-    // print('Highlighting Best Column: $isHighlightingBestColumn');
-    // print('====================================================');
-
-    return recommendation;
-  }
-
-  /// Step 1 points to label function
-  static String _pointsToLabelStep1(double points) {
-    if (points <= 17) {
-      return 'Low Need';
-    } else if (points <= 32) {
-      return 'Medium Need';
-    } else {
-      return 'High Need';
-    }
-  }
-
-  /// Step 2 points to label label
-  static String _pointsToLabelStep2(double points) {
-    if (points <= 17) {
-      return 'Below Average';
-    } else if (points <= 32) {
-      return 'Average';
-    } else {
-      return 'Above Average';
-    }
-  }
+  // Highlight state — pure functions of infrastructureRecommendation's
+  // code, mirroring the code->column mapping:
+  //   0: Minimal (none)   1: Good   2: Better   3: Best
+  //   4: >= Good (Good+Better+Best)   5: >= Better (Better+Best)
+  bool get isHighlightingGoodColumn =>
+      const {1, 4}.contains(infrastructureRecommendation.recommendedCode);
+  bool get isHighlightingBetterColumn =>
+      const {2, 4, 5}.contains(infrastructureRecommendation.recommendedCode);
+  bool get isHighlightingBestColumn =>
+      const {3, 4, 5}.contains(infrastructureRecommendation.recommendedCode);
 
   /// Select recommendation
   void selectRecommmendation(

@@ -1,5 +1,5 @@
 questionText = "What is the current rate of walking to work in the proposed project's Census Tracts?"
-useUrl = 'Use U.S. Census data available'
+useUrl = 'Use U.S. Census data,'
 url = 'https://data.census.gov/map/0500000US32003$14000,32003$1400000/ACSST5Y2020/S0801/S0801_C01_010E?q=S0801&layer=VT_2020_140_00_PY_D1&palette=Greens&mode=thematic&loc=35.9453,-115.1393,z9.4648&g=050XX00US32003$1400000&tid=ACSST5Y2020.S0801&cid=S0801_C01_010E'
 answers = [
   { text = '0-1.7%', points = 1.0 },

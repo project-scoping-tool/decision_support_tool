@@ -100,7 +100,16 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
         title: _buildWidgetAppBarTitle(title, _jurisdiction),
         automaticallyImplyLeading: false,
       ),
-      body: _buildWidgetBody(),
+      // This page is built once and never rebuilt by page navigation
+      // itself (AssessmentApp scrolls between pages via PageController,
+      // not setState), so without this the recommendation/labels shown
+      // here would stay frozen at whatever they were the first time this
+      // page was reached — even after going back and changing a Step 1/2
+      // answer. Rebuilding on answersChanged keeps it in sync.
+      body: ListenableBuilder(
+        listenable: _viewModel.answersChanged,
+        builder: (context, _) => _buildWidgetBody(),
+      ),
     );
   }
 

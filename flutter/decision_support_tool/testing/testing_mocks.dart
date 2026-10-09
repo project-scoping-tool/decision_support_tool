@@ -55,4 +55,7 @@ class MockAssessmentsViewModel extends Fake implements AssessmentViewModel {
   getInfrastructureRecommendation() {
     return (recommendedCode: 100, recommendedText: "TEST recommendText");
   }
+
+  @override
+  void clearRecommendationCache() {}
 }

@@ -6,6 +6,32 @@ import 'package:decision_support_tool/ui/recommendation_view_model.dart';
 import 'package:decision_support_tool/ui/question_section_view_model.dart';
 import 'package:flutter/foundation.dart';
 
+/// Step 1 (existing need) classification.
+enum NeedLevel { low, medium, high }
+
+/// Step 2 (existing infrastructure) classification.
+enum InfrastructureLevel { belowAverage, average, aboveAverage }
+
+/// Single source of truth for the Step 1 Low/Medium/High boundaries.
+/// Used both to compute the recommendation ([AssessmentViewModel
+/// .getInfrastructureRecommendation]) and to derive the displayed
+/// "Existing Need" label ([RecommendationsViewModel.step1Label]), so the
+/// two cannot diverge.
+NeedLevel classifyNeedLevel(double points) {
+  if (points < 18) return NeedLevel.low;
+  if (points < 33) return NeedLevel.medium;
+  return NeedLevel.high;
+}
+
+/// Single source of truth for the Step 2 Below/Average/Above Average
+/// boundaries. Used both to compute the recommendation and to derive the
+/// displayed "Existing Infrastructure" label.
+InfrastructureLevel classifyInfrastructureLevel(double points) {
+  if (points < 18) return InfrastructureLevel.belowAverage;
+  if (points < 33) return InfrastructureLevel.average;
+  return InfrastructureLevel.aboveAverage;
+}
+
 /// View model for the entire Assessments page.
 class AssessmentViewModel {
   /// Creates a new instance.
@@ -174,34 +200,23 @@ class AssessmentViewModel {
     print('Step 1 Points: $step1');
     print('Step 2 Points: $step2');
 
-    bool high, medium, low;
-    bool belowAve, average, aboveAve;
+    // Classification is delegated to classifyNeedLevel()/
+    // classifyInfrastructureLevel() (top of this file) — the single source
+    // of truth for these boundaries, also used by RecommendationsViewModel
+    // for the displayed "Existing Need"/"Existing Infrastructure" labels,
+    // so the two can never diverge.
+    final needLevel = classifyNeedLevel(step1);
+    final infraLevel = classifyInfrastructureLevel(step2);
 
-    high = medium = low = belowAve = average = aboveAve = false;
+    final low = needLevel == NeedLevel.low;
+    final medium = needLevel == NeedLevel.medium;
+    final high = needLevel == NeedLevel.high;
+    final belowAve = infraLevel == InfrastructureLevel.belowAverage;
+    final average = infraLevel == InfrastructureLevel.average;
+    final aboveAve = infraLevel == InfrastructureLevel.aboveAverage;
 
-    // Determine step 1 need level
-    if (step1 < 18) {
-      low = true;
-      print('Step 1 Classification: LOW (< 18)');
-    } else if (step1 < 33) {
-      medium = true;
-      print('Step 1 Classification: MEDIUM (18-32)');
-    } else {
-      high = true;
-      print('Step 1 Classification: HIGH (>= 33)');
-    }
-
-    // Determine step 2 existing infrastructure score
-    if (step2 < 18) {
-      belowAve = true;
-      print('Step 2 Classification: BELOW AVERAGE (< 18)');
-    } else if (step2 < 33) {
-      average = true;
-      print('Step 2 Classification: AVERAGE (18-32)');
-    } else {
-      aboveAve = true;
-      print('Step 2 Classification: ABOVE AVERAGE (>= 33)');
-    }
+    print('Step 1 Classification: $needLevel');
+    print('Step 2 Classification: $infraLevel');
 
     int recommendedCode;
     String recommendedText;

@@ -18,5 +18,5 @@ instructionsMarkdown = '''
   * The bus stop accessibility score will appear in a blue box on the right toolbar.
 * Enter the answer below that corresponds to the level of bus service.
 '''
-videoId = '1-c5E25TSebN_3inZxxgYGgwjpCXezn7u'
+videoId = ''
 hint = ''
