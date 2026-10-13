@@ -9,7 +9,7 @@
 ///
 /// See the routing in `main.dart`, which is the only other place this is
 /// read.
-const bool landingPageEnabled = true;
+const bool landingPageEnabled = false;
 
 /// URL path the PST tool is served at when [landingPageEnabled] is `true`
 /// (and, in addition to `/`, when it's `false`).
