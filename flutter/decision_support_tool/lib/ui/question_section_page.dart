@@ -22,6 +22,7 @@ import 'package:decision_support_tool/ui/schools_map_widget.dart';
 import 'package:decision_support_tool/services/bicycle_crash_drawing_service.dart';
 import 'package:decision_support_tool/ui/bicycle_crash_drawing_widget.dart';
 import 'package:decision_support_tool/ui/bicycle_crash_map_widget.dart';
+import 'package:decision_support_tool/services/answer_range_matcher.dart';
 import 'package:decision_support_tool/services/pedestrian_crash_drawing_service.dart';
 import 'package:decision_support_tool/ui/pedestrian_crash_drawing_widget.dart';
 import 'package:decision_support_tool/ui/pedestrian_crash_map_widget.dart';
@@ -55,7 +56,7 @@ class BicycleCrashMapData {
   final int crashCount;
   final double density;
   final double areaSqMiles;
-  final List<List<double>>? drawnPolyline; // NEW: Store drawn polyline
+  final List<List<double>>? drawnPolygon; // Store the drawn project-area polygon
 
   BicycleCrashMapData({
     required this.lon,
@@ -65,7 +66,7 @@ class BicycleCrashMapData {
     required this.crashCount,
     required this.density,
     required this.areaSqMiles,
-    this.drawnPolyline, // NEW: Optional drawn polyline
+    this.drawnPolygon, // Optional drawn project-area polygon
   });
 }
 
@@ -78,7 +79,7 @@ class PedestrianCrashMapData {
   final int crashCount;
   final double density;
   final double areaSqMiles;
-  final List<List<double>>? drawnPolyline;
+  final List<List<double>>? drawnPolygon;
 
   PedestrianCrashMapData({
     required this.lon,
@@ -88,7 +89,7 @@ class PedestrianCrashMapData {
     required this.crashCount,
     required this.density,
     required this.areaSqMiles,
-    this.drawnPolyline,
+    this.drawnPolygon,
   });
 }
 
@@ -834,10 +835,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
               const Expanded(
                 child: Text(
                   'Selected Infrastructure',
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                 ),
               ),
               IconButton(
@@ -876,10 +874,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
                     decoration: BoxDecoration(
                       color: Colors.green[50],
                       borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(
-                        color: Colors.green[300]!,
-                        width: 2.0,
-                      ),
+                      border: Border.all(color: Colors.green[300]!, width: 2.0),
                     ),
                     child: Text(
                       recommended,
@@ -915,7 +910,10 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
               ),
               child: const Text(
                 'Continue to Step 3',
-                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -1009,11 +1007,11 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
         onPressed = () => _openActivityDensityDrawing(questionIndex);
         break;
 
-      case 'Walkability Index': // S2-Q1
-        buttonText = 'Draw Area & Calculate Walkability Score';
-        buttonIcon = Icons.directions_walk;
-        onPressed = () => _openWalkabilityDrawing(questionIndex);
-        break;
+      // case 'Walkability Index': // S2-Q1
+      //   buttonText = 'Draw Area & Calculate Walkability Score';
+      //   buttonIcon = Icons.directions_walk;
+      //   onPressed = () => _openWalkabilityDrawing(questionIndex);
+      //   break;
 
       default:
         debugPrint(
@@ -2404,26 +2402,34 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     // Store the result
     _lastPedestrianCrashResult = result;
 
-    // Find the matching answer
+    // Find the matching answer by reading the bracket directly from this
+    // question's own (possibly jurisdiction-specific) TOML, instead of
+    // string-matching against a hardcoded label the service invented --
+    // see AnswerRangeMatcher for why.
     final questionInfo = _questionInfos[questionIndex];
-    int answerIndex = questionInfo.answers.indexWhere(
-      (a) => a.text == result.answer,
+    final answerIndex = AnswerRangeMatcher.matchIndex(
+      questionInfo.answers,
+      result.density,
     );
 
     if (answerIndex != -1) {
       // Auto-select the answer
       _viewModel.selectAnswer(questionIndex, answerIndex);
 
-      // Show success dialog
+      // Show success dialog, with the actual matched TOML label (not the
+      // service's own best-guess string).
       _showPedestrianCrashResultDialog(
         result.count,
         result.matchedAddress,
-        result.answer,
+        questionInfo.answers[answerIndex].text,
         result.density,
         result.areaSqMiles,
       );
     } else {
-      _showErrorDialog('Could not match answer range: ${result.answer}');
+      _showErrorDialog(
+        'Could not match density (${result.density.toStringAsFixed(2)}) '
+        'to an answer range.',
+      );
     }
   }
 
@@ -2435,26 +2441,34 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
     // Store the result
     _lastBicycleCrashResult = result;
 
-    // Find the matching answer
+    // Find the matching answer by reading the bracket directly from this
+    // question's own (possibly jurisdiction-specific) TOML, instead of
+    // string-matching against a hardcoded label the service invented --
+    // see AnswerRangeMatcher for why.
     final questionInfo = _questionInfos[questionIndex];
-    int answerIndex = questionInfo.answers.indexWhere(
-      (a) => a.text == result.answer,
+    final answerIndex = AnswerRangeMatcher.matchIndex(
+      questionInfo.answers,
+      result.density,
     );
 
     if (answerIndex != -1) {
       // Auto-select the answer
       _viewModel.selectAnswer(questionIndex, answerIndex);
 
-      // Show success dialog
+      // Show success dialog, with the actual matched TOML label (not the
+      // service's own best-guess string).
       _showBicycleCrashResultDialog(
         result.count,
         result.matchedAddress,
-        result.answer,
+        questionInfo.answers[answerIndex].text,
         result.density,
         result.areaSqMiles,
       );
     } else {
-      _showErrorDialog('Could not match answer range: ${result.answer}');
+      _showErrorDialog(
+        'Could not match density (${result.density.toStringAsFixed(2)}) '
+        'to an answer range.',
+      );
     }
   }
 
@@ -2628,7 +2642,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
                 crashCount: result.count,
                 density: result.density,
                 areaSqMiles: result.areaSqMiles,
-                drawnPolyline: result.drawnPolyline,
+                drawnPolygon: result.drawnPolygon,
               );
             },
 
@@ -2640,7 +2654,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           crashCount: mapData.crashCount,
           density: mapData.density,
           areaSqMiles: mapData.areaSqMiles,
-          drawnPolyline: mapData.drawnPolyline,
+          drawnPolygon: mapData.drawnPolygon,
         ),
       ),
     );
@@ -2685,7 +2699,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
                 crashCount: result.count,
                 density: result.density,
                 areaSqMiles: result.areaSqMiles,
-                drawnPolyline: result.drawnPolyline,
+                drawnPolygon: result.drawnPolygon,
               );
             },
 
@@ -2697,7 +2711,7 @@ class _QuestionSectionPageState extends State<QuestionSectionPage> {
           crashCount: mapData.crashCount,
           density: mapData.density,
           areaSqMiles: mapData.areaSqMiles,
-          drawnPolyline: mapData.drawnPolyline,
+          drawnPolygon: mapData.drawnPolygon,
         ),
       ),
     );

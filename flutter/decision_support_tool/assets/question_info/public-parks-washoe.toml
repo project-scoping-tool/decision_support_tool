@@ -9,7 +9,7 @@ answers = [
 ]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
+autoFillEnabled = true
 buttonText = 'Parks'
 instructionsMarkdown = '''
 * Click on the link for the Washoe County Open Data & Transparency Portal, [available here](https://explore-washoe.opendata.arcgis.com/datasets/3e28c14fca6c495d8cc674089643e6d8_6/explore?location=40.457250%2C-119.697500%2C7).

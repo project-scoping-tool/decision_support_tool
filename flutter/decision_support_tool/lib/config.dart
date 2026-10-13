@@ -37,4 +37,4 @@ abstract class Assets {
 ///
 /// Flip this instead of commenting out `_buildProjectAddressInput()` /
 /// `_buildWidgetAutoFillButton()` in question_section_page.dart.
-const bool enableAutoFillFeatures = false;
+const bool enableAutoFillFeatures = true;

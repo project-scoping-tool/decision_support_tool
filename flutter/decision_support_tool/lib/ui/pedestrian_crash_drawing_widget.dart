@@ -429,9 +429,8 @@ class _PedestrianCrashDrawingWidgetState
     if (!_isDrawing) return;
 
     // Snap the tapped location to the nearest existing drawn point if within
-    // the snap threshold.  Identical coordinates allow the service to detect
-    // a closed polygon (closeDistMi == 0 < 0.031) and use the correct
-    // closed-polygon buffer path instead of the open-polyline path.
+    // the snap threshold -- easy to close the polygon without a
+    // pixel-perfect click back on the first point.
     LatLng snapped = latLng;
     if (_drawnPoints.isNotEmpty) {
       final lonToMiles = 69.0 * math.cos(latLng.latitude * math.pi / 180.0);
@@ -487,12 +486,13 @@ class _PedestrianCrashDrawingWidgetState
       _errorMessage = null;
     });
     try {
-      final polylinePoints = _drawnPoints
+      final polygonPoints = _drawnPoints
           .map((p) => [p.longitude, p.latitude])
           .toList();
-      final result = await PedestrianCrashDrawingService.calculateFromPolyline(
+      polygonPoints.add(polygonPoints.first); // close ring
+      final result = await PedestrianCrashDrawingService.calculateFromPolygon(
         address: widget.matchedAddress,
-        polylinePoints: polylinePoints,
+        polygonPoints: polygonPoints,
       );
       if (mounted) {
         widget.onPolygonSaved?.call(List<LatLng>.from(_drawnPoints));

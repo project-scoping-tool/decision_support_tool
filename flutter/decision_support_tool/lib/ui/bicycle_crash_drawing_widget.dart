@@ -618,6 +618,21 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.app',
                       ),
+                      // Drawn polygon fill + outline (semi-transparent
+                      // fill matching the other polygon-drawing questions,
+                      // e.g. Land Use Diversity)
+                      if (_drawnPoints.length >= 2)
+                        PolygonLayer(
+                          polygons: [
+                            Polygon(
+                              points: _drawnPoints,
+                              color: Colors.red.withOpacity(0.15),
+                              borderColor: Colors.red[700]!,
+                              borderStrokeWidth: 2.5,
+                              isFilled: true,
+                            ),
+                          ],
+                        ),
                       // Drawn polyline
                       if (_drawnPoints.isNotEmpty)
                         PolylineLayer(
@@ -896,9 +911,8 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
     if (!_isDrawing) return;
 
     // Snap the tapped location to the nearest existing drawn point if it is
-    // within the snap threshold.  This guarantees that "equal" points share
-    // exactly the same coordinates, which is what the service uses to detect
-    // a closed polygon (closeDistMi < 0.031).
+    // within the snap threshold -- easy to close the polygon without a
+    // pixel-perfect click back on the first point.
     LatLng snapped = latLng;
     if (_drawnPoints.isNotEmpty) {
       final lonToMiles = 69.0 * math.cos(latLng.latitude * math.pi / 180.0);
@@ -958,14 +972,15 @@ class _BicycleCrashDrawingWidgetState extends State<BicycleCrashDrawingWidget> {
       _errorMessage = null;
     });
     try {
-      // Convert LatLng to [lon, lat] format
-      final polylinePoints = _drawnPoints
+      // Convert LatLng to [lon, lat] format and close the ring
+      final polygonPoints = _drawnPoints
           .map((p) => [p.longitude, p.latitude])
           .toList();
-      // Calculate crashes within drawn area
-      final result = await BicycleCrashDrawingService.calculateFromPolyline(
+      polygonPoints.add(polygonPoints.first); // close ring
+      // Calculate crashes within drawn polygon
+      final result = await BicycleCrashDrawingService.calculateFromPolygon(
         address: widget.matchedAddress,
-        polylinePoints: polylinePoints,
+        polygonPoints: polygonPoints,
       );
       // Close this dialog
       if (mounted) {

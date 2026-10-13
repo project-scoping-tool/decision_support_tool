@@ -9,7 +9,7 @@ answers = [
 ]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
+autoFillEnabled = true
 buttonText = 'Schools'
 instructionsMarkdown = '''
 * Click on the link for the Washoe County Open Data & Transparency Portal, [available here](https://explore-washoe.opendata.arcgis.com/datasets/810b04e0f9134a76bdc1c9e5ffb86f98_134/explore?location=39.949900%2C-119.649350%2C8).

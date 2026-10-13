@@ -8,7 +8,7 @@ answers = [
   ]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
+autoFillEnabled = true
 buttonText = 'Bus Stops'
 instructionsMarkdown = '''
 * Click the link for the PST Bus Stop Information map, available [here](https://experience.arcgis.com/experience/ae620e958419424381e4855b2d3adb26?draft=true).

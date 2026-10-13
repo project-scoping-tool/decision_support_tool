@@ -4,7 +4,7 @@ url = 'https://regional-transportation-commission-washoe-open-data-rtcwashoe.hub
 answers = [{ text = '0', points = 0.0 }, { text = '1 or more', points = 4.0 }]
 answerLeadingHeader = 'Number:'
 domain = 'Connectivity'
-autoFillEnabled = false
+autoFillEnabled = true
 buttonText = 'Bike Lanes'
 instructionsMarkdown = '''
 * Click on the RTC data link for Washoe [here](https://regional-transportation-commission-washoe-open-data-rtcwashoe.hub.arcgis.com/apps/4f1ba7ad3d874a8595d1aa35479b49c3/explore).

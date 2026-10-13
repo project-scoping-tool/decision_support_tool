@@ -545,6 +545,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'dart:math' as math;
+import 'package:decision_support_tool/services/geo_utils.dart';
 
 class PedestrianCrashDrawingResult {
   final int count;
@@ -555,7 +556,7 @@ class PedestrianCrashDrawingResult {
   final String answer;
   final double areaSqMiles;
   final List<Map<String, dynamic>> crashesInArea;
-  final List<List<double>>? drawnPolyline;
+  final List<List<double>>? drawnPolygon;
 
   PedestrianCrashDrawingResult({
     required this.count,
@@ -566,17 +567,20 @@ class PedestrianCrashDrawingResult {
     required this.answer,
     required this.areaSqMiles,
     required this.crashesInArea,
-    this.drawnPolyline,
+    this.drawnPolygon,
   });
 }
 
 class PedestrianCrashDrawingService {
-  static const double _bufferMiles = 0.25;
   static List<Map<String, dynamic>>? _cachedCrashFeatures;
 
-  static Future<PedestrianCrashDrawingResult> calculateFromPolyline({
+  /// Computes pedestrian crash density within the user's exact drawn
+  /// project-area polygon — true polygon area (shoelace formula) and
+  /// point-in-polygon crash counting, matching every other auto-fill
+  /// question's drawing behavior (see [GeoUtils]).
+  static Future<PedestrianCrashDrawingResult> calculateFromPolygon({
     required String address,
-    required List<List<double>> polylinePoints,
+    required List<List<double>> polygonPoints,
   }) async {
     print('=== Pedestrian Crash Drawing Calculation Starting ===');
 
@@ -592,18 +596,17 @@ class PedestrianCrashDrawingService {
       final crashFeatures = await _loadCrashDataFromAsset();
       print('✓ Loaded ${crashFeatures.length} crash records');
 
-      print('Step 3: Calculating buffer area (grid sampling)...');
-      final areaSqMiles = _calculateBufferAreaGrid(polylinePoints, _bufferMiles);
+      print('Step 3: Calculating polygon area...');
+      final areaSqMiles = GeoUtils.polygonAreaSqMiles(polygonPoints);
       print('Area: ${areaSqMiles.toStringAsFixed(6)} sq miles');
 
-      print('Step 4: Counting crashes within buffer...');
-      final crashesInArea = _filterCrashesByDistance(
+      print('Step 4: Counting crashes within drawn polygon...');
+      final crashesInArea = _filterCrashesInPolygon(
         crashFeatures,
-        polylinePoints,
-        _bufferMiles,
+        polygonPoints,
       );
       final count = crashesInArea.length;
-      print('Found $count crashes within buffer');
+      print('Found $count crashes within drawn polygon');
 
       final density = areaSqMiles > 0 ? count / areaSqMiles : 0.0;
       final densityRounded = density.round();
@@ -623,7 +626,7 @@ class PedestrianCrashDrawingService {
         answer: answer,
         areaSqMiles: areaSqMiles,
         crashesInArea: crashesInArea,
-        drawnPolyline: polylinePoints,
+        drawnPolygon: polygonPoints,
       );
     } catch (e) {
       print('Pedestrian Crash Drawing Calculation Failed: $e');
@@ -631,395 +634,9 @@ class PedestrianCrashDrawingService {
     }
   }
 
-  static List<List<double>> _createBufferedPolygon(
-    List<List<double>> polylinePoints,
-    double bufferMiles,
-  ) {
-    if (polylinePoints.isEmpty) return [];
-    if (polylinePoints.length == 1) {
-      return _createCirclePoints(polylinePoints[0], bufferMiles, 64);
-    }
-
-    final pts = List<List<double>>.from(polylinePoints);
-    final n = pts.length;
-    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / n;
-    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
-    final latToMiles = 69.0;
-
-    final closeDxMi = (pts.first[0] - pts.last[0]) * lonToMiles;
-    final closeDyMi = (pts.first[1] - pts.last[1]) * latToMiles;
-    final closeDistMi =
-        math.sqrt(closeDxMi * closeDxMi + closeDyMi * closeDyMi);
-
-    if (closeDistMi < 0.031 && n >= 3) {
-      return _createClosedPolygonBuffer(pts, bufferMiles, avgLat);
-    }
-    return _createOpenPolylineBuffer(pts, bufferMiles, avgLat);
-  }
-
-  static List<List<double>> _createClosedPolygonBuffer(
-    List<List<double>> pts,
-    double bufferMiles,
-    double avgLat,
-  ) {
-    var ring = List<List<double>>.from(pts);
-    final dx = ring.first[0] - ring.last[0];
-    final dy = ring.first[1] - ring.last[1];
-    if (math.sqrt(dx * dx + dy * dy) > 1e-10) {
-      ring = [...ring, ring.first];
-    }
-    final closedRing = ring.sublist(0, ring.length - 1);
-    final nn = closedRing.length;
-
-    final bufferLatDeg = bufferMiles / 69.0;
-    final bufferLonDeg =
-        bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
-    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
-    final latToMiles = 69.0;
-
-    double signedArea = 0.0;
-    for (int i = 0; i < nn; i++) {
-      final j = (i + 1) % nn;
-      signedArea += closedRing[i][0] * closedRing[j][1] -
-          closedRing[j][0] * closedRing[i][1];
-    }
-    signedArea /= 2.0;
-    final perpSign = signedArea > 0 ? -1.0 : 1.0;
-
-    const arcSteps = 16;
-    final bufferedPoints = <List<double>>[];
-
-    for (int i = 0; i < nn; i++) {
-      final current = closedRing[i];
-      final prev = closedRing[(i - 1 + nn) % nn];
-      final next = closedRing[(i + 1) % nn];
-
-      final dx1 = (current[0] - prev[0]) * lonToMiles;
-      final dy1 = (current[1] - prev[1]) * latToMiles;
-      final dx2 = (next[0] - current[0]) * lonToMiles;
-      final dy2 = (next[1] - current[1]) * latToMiles;
-
-      final cross = dx1 * dy2 - dy1 * dx2;
-      final isConvex = (cross * perpSign) < 0;
-
-      final inAngle = math.atan2(dy1, dx1);
-      final outAngle = math.atan2(dy2, dx2);
-      final perpIn = inAngle + perpSign * math.pi / 2.0;
-      final perpOut = outAngle + perpSign * math.pi / 2.0;
-
-      var delta = perpOut - perpIn;
-      while (delta > math.pi) delta -= 2 * math.pi;
-      while (delta < -math.pi) delta += 2 * math.pi;
-
-      if (isConvex && delta.abs() > 0.01) {
-        final steps =
-            (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
-        for (int j = 0; j <= steps; j++) {
-          final t = j / steps;
-          final angle = perpIn + t * delta;
-          bufferedPoints.add([
-            current[0] + bufferLonDeg * math.cos(angle),
-            current[1] + bufferLatDeg * math.sin(angle),
-          ]);
-        }
-      } else {
-        final bisector = perpIn + delta / 2.0;
-        final cosHalf = math.cos(delta / 2.0);
-        final miter = cosHalf.abs() > 0.1
-            ? (1.0 / cosHalf).clamp(-4.0, 4.0)
-            : 1.0;
-        bufferedPoints.add([
-          current[0] + bufferLonDeg * math.cos(bisector) * miter,
-          current[1] + bufferLatDeg * math.sin(bisector) * miter,
-        ]);
-      }
-    }
-
-    if (bufferedPoints.isNotEmpty) {
-      bufferedPoints.add(bufferedPoints[0]);
-    }
-    return bufferedPoints;
-  }
-
-  static List<List<double>> _createOpenPolylineBuffer(
-    List<List<double>> pts,
-    double bufferMiles,
-    double avgLat,
-  ) {
-    final n = pts.length;
-    final bufferLatDeg = bufferMiles / 69.0;
-    final bufferLonDeg =
-        bufferMiles / (69.0 * math.cos(avgLat * math.pi / 180.0));
-    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
-    final latToMiles = 69.0;
-    const arcSteps = 16;
-
-    final segAngles = <double>[];
-    for (int i = 0; i < n - 1; i++) {
-      final ddx = (pts[i + 1][0] - pts[i][0]) * lonToMiles;
-      final ddy = (pts[i + 1][1] - pts[i][1]) * latToMiles;
-      segAngles.add(math.atan2(ddy, ddx));
-    }
-
-    final rightSide = <List<double>>[];
-    final leftSide = <List<double>>[];
-
-    for (int i = 0; i < n; i++) {
-      if (i == 0) {
-        final pa = segAngles[0] - math.pi / 2;
-        rightSide.add([
-          pts[0][0] + bufferLonDeg * math.cos(pa),
-          pts[0][1] + bufferLatDeg * math.sin(pa),
-        ]);
-      } else if (i == n - 1) {
-        final pa = segAngles[n - 2] - math.pi / 2;
-        rightSide.add([
-          pts[n - 1][0] + bufferLonDeg * math.cos(pa),
-          pts[n - 1][1] + bufferLatDeg * math.sin(pa),
-        ]);
-      } else {
-        final perpIn = segAngles[i - 1] - math.pi / 2;
-        final perpOut = segAngles[i] - math.pi / 2;
-        final dxIn = (pts[i][0] - pts[i - 1][0]) * lonToMiles;
-        final dyIn = (pts[i][1] - pts[i - 1][1]) * latToMiles;
-        final dxOut = (pts[i + 1][0] - pts[i][0]) * lonToMiles;
-        final dyOut = (pts[i + 1][1] - pts[i][1]) * latToMiles;
-        final cross = dxIn * dyOut - dyIn * dxOut;
-        var delta = perpOut - perpIn;
-        while (delta > math.pi) delta -= 2 * math.pi;
-        while (delta < -math.pi) delta += 2 * math.pi;
-
-        if (cross > 1e-10 && delta.abs() > 0.01) {
-          final steps =
-              (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
-          for (int j = 0; j <= steps; j++) {
-            final t = j / steps;
-            final angle = perpIn + t * delta;
-            rightSide.add([
-              pts[i][0] + bufferLonDeg * math.cos(angle),
-              pts[i][1] + bufferLatDeg * math.sin(angle),
-            ]);
-          }
-        } else {
-          final bisector = perpIn + delta / 2.0;
-          final cosHalf = math.cos(delta / 2.0);
-          final miter = cosHalf.abs() > 0.1
-              ? (1.0 / cosHalf).clamp(-4.0, 4.0)
-              : 1.0;
-          rightSide.add([
-            pts[i][0] + bufferLonDeg * math.cos(bisector) * miter,
-            pts[i][1] + bufferLatDeg * math.sin(bisector) * miter,
-          ]);
-        }
-      }
-    }
-
-    for (int i = 0; i < n; i++) {
-      if (i == 0) {
-        final pa = segAngles[0] + math.pi / 2;
-        leftSide.add([
-          pts[0][0] + bufferLonDeg * math.cos(pa),
-          pts[0][1] + bufferLatDeg * math.sin(pa),
-        ]);
-      } else if (i == n - 1) {
-        final pa = segAngles[n - 2] + math.pi / 2;
-        leftSide.add([
-          pts[n - 1][0] + bufferLonDeg * math.cos(pa),
-          pts[n - 1][1] + bufferLatDeg * math.sin(pa),
-        ]);
-      } else {
-        final perpIn = segAngles[i - 1] + math.pi / 2;
-        final perpOut = segAngles[i] + math.pi / 2;
-        final dxIn = (pts[i][0] - pts[i - 1][0]) * lonToMiles;
-        final dyIn = (pts[i][1] - pts[i - 1][1]) * latToMiles;
-        final dxOut = (pts[i + 1][0] - pts[i][0]) * lonToMiles;
-        final dyOut = (pts[i + 1][1] - pts[i][1]) * latToMiles;
-        final cross = dxIn * dyOut - dyIn * dxOut;
-        var delta = perpOut - perpIn;
-        while (delta > math.pi) delta -= 2 * math.pi;
-        while (delta < -math.pi) delta += 2 * math.pi;
-
-        if (cross < -1e-10 && delta.abs() > 0.01) {
-          final steps =
-              (arcSteps * delta.abs() / math.pi).ceil().clamp(4, arcSteps);
-          for (int j = 0; j <= steps; j++) {
-            final t = j / steps;
-            final angle = perpIn + t * delta;
-            leftSide.add([
-              pts[i][0] + bufferLonDeg * math.cos(angle),
-              pts[i][1] + bufferLatDeg * math.sin(angle),
-            ]);
-          }
-        } else {
-          final bisector = perpIn + delta / 2.0;
-          final cosHalf = math.cos(delta / 2.0);
-          final miter = cosHalf.abs() > 0.1
-              ? (1.0 / cosHalf).clamp(-4.0, 4.0)
-              : 1.0;
-          leftSide.add([
-            pts[i][0] + bufferLonDeg * math.cos(bisector) * miter,
-            pts[i][1] + bufferLatDeg * math.sin(bisector) * miter,
-          ]);
-        }
-      }
-    }
-
-    final result = <List<double>>[];
-
-    final startAngle = segAngles[0] + math.pi / 2;
-    for (int j = 0; j <= arcSteps; j++) {
-      final t = j / arcSteps;
-      final angle = startAngle + t * math.pi;
-      result.add([
-        pts[0][0] + bufferLonDeg * math.cos(angle),
-        pts[0][1] + bufferLatDeg * math.sin(angle),
-      ]);
-    }
-
-    result.addAll(rightSide);
-
-    final endAngle = segAngles[n - 2] - math.pi / 2;
-    for (int j = 0; j <= arcSteps; j++) {
-      final t = j / arcSteps;
-      final angle = endAngle + t * math.pi;
-      result.add([
-        pts[n - 1][0] + bufferLonDeg * math.cos(angle),
-        pts[n - 1][1] + bufferLatDeg * math.sin(angle),
-      ]);
-    }
-
-    result.addAll(leftSide.reversed);
-
-    if (result.isNotEmpty) {
-      result.add(result[0]);
-    }
-    return result;
-  }
-
-  static List<List<double>> _createCirclePoints(
-    List<double> center,
-    double radiusMiles,
-    int numPoints,
-  ) {
-    final radiusLatDeg = radiusMiles / 69.0;
-    final radiusLonDeg =
-        radiusMiles / (69.0 * math.cos(center[1] * math.pi / 180.0));
-    final points = <List<double>>[];
-    for (int i = 0; i <= numPoints; i++) {
-      final angle = (i * 2 * math.pi) / numPoints;
-      points.add([
-        center[0] + radiusLonDeg * math.cos(angle),
-        center[1] + radiusLatDeg * math.sin(angle),
-      ]);
-    }
-    return points;
-  }
-
-  static double _distToSegmentMiles(
-    double px,
-    double py,
-    double ax,
-    double ay,
-    double bx,
-    double by,
-    double lonToMiles,
-    double latToMiles,
-  ) {
-    final pxM = px * lonToMiles;
-    final pyM = py * latToMiles;
-    final axM = ax * lonToMiles;
-    final ayM = ay * latToMiles;
-    final bxM = bx * lonToMiles;
-    final byM = by * latToMiles;
-    final dx = bxM - axM;
-    final dy = byM - ayM;
-    final lenSq = dx * dx + dy * dy;
-    if (lenSq == 0) {
-      final ex = pxM - axM;
-      final ey = pyM - ayM;
-      return math.sqrt(ex * ex + ey * ey);
-    }
-    final t = ((pxM - axM) * dx + (pyM - ayM) * dy) / lenSq;
-    final tc = t.clamp(0.0, 1.0);
-    final cx = axM + tc * dx;
-    final cy = ayM + tc * dy;
-    final ex = pxM - cx;
-    final ey = pyM - cy;
-    return math.sqrt(ex * ex + ey * ey);
-  }
-
-  static double _distToPolylineMiles(
-    double lon,
-    double lat,
-    List<List<double>> pts,
-    double lonToMiles,
-    double latToMiles,
-  ) {
-    double minDist = double.infinity;
-    for (int i = 0; i < pts.length - 1; i++) {
-      final d = _distToSegmentMiles(
-        lon, lat,
-        pts[i][0], pts[i][1],
-        pts[i + 1][0], pts[i + 1][1],
-        lonToMiles, latToMiles,
-      );
-      if (d < minDist) minDist = d;
-    }
-    return minDist;
-  }
-
-  // Returns true if (lon, lat) is within bufferMiles of the polyline.
-  // For closed polygons this naturally produces an ArcGIS-style donut: when
-  // the polygon is large enough that its centre is farther than bufferMiles
-  // from every edge, the centre hole is excluded automatically.
-  static bool _isPointInBuffer(
-    double lon,
-    double lat,
-    List<List<double>> pts,
-    double bufferMiles,
-  ) {
-    if (pts.isEmpty) return false;
-    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / pts.length;
-    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
-    const latToMiles = 69.0;
-    return _distToPolylineMiles(lon, lat, pts, lonToMiles, latToMiles) <= bufferMiles;
-  }
-
-  // Grid-based area: count cells inside buffer, multiply by cell area.
-  // Step 0.0005 deg (~55 m) avoids double-counting overlapping buffer parts.
-  static double _calculateBufferAreaGrid(
-    List<List<double>> pts,
-    double bufferMiles,
-  ) {
-    if (pts.isEmpty) return 0.0;
-    final avgLat = pts.map((p) => p[1]).reduce((a, b) => a + b) / pts.length;
-    final lonToMiles = 69.0 * math.cos(avgLat * math.pi / 180.0);
-    const latToMiles = 69.0;
-    const step = 0.0005;
-    final cellArea = (step * lonToMiles) * (step * latToMiles);
-    double minLon = pts.map((p) => p[0]).reduce((a, b) => a < b ? a : b);
-    double maxLon = pts.map((p) => p[0]).reduce((a, b) => a > b ? a : b);
-    double minLat = pts.map((p) => p[1]).reduce((a, b) => a < b ? a : b);
-    double maxLat = pts.map((p) => p[1]).reduce((a, b) => a > b ? a : b);
-    final bufLonDeg = bufferMiles / lonToMiles;
-    final bufLatDeg = bufferMiles / latToMiles;
-    minLon -= bufLonDeg + step;
-    maxLon += bufLonDeg + step;
-    minLat -= bufLatDeg + step;
-    maxLat += bufLatDeg + step;
-    int count = 0;
-    for (double sLat = minLat; sLat <= maxLat; sLat += step) {
-      for (double sLon = minLon; sLon <= maxLon; sLon += step) {
-        if (_isPointInBuffer(sLon, sLat, pts, bufferMiles)) count++;
-      }
-    }
-    return count * cellArea;
-  }
-
-  static List<Map<String, dynamic>> _filterCrashesByDistance(
+  static List<Map<String, dynamic>> _filterCrashesInPolygon(
     List<Map<String, dynamic>> crashFeatures,
-    List<List<double>> pts,
-    double bufferMiles,
+    List<List<double>> polygon,
   ) {
     final result = <Map<String, dynamic>>[];
     for (final feature in crashFeatures) {
@@ -1029,47 +646,11 @@ class PedestrianCrashDrawingService {
       if (coords == null || coords.length < 2) continue;
       final crashLon = (coords[0] as num).toDouble();
       final crashLat = (coords[1] as num).toDouble();
-      if (_isPointInBuffer(crashLon, crashLat, pts, bufferMiles)) {
+      if (GeoUtils.pointInPolygon(crashLon, crashLat, polygon)) {
         result.add(feature);
       }
     }
     return result;
-  }
-
-
-  static bool _isPointInPolygonRobust(
-    double x,
-    double y,
-    List<List<double>> polygon,
-  ) {
-    if (polygon.length < 3) return false;
-
-    int windingNumber = 0;
-
-    for (int i = 0; i < polygon.length - 1; i++) {
-      final x1 = polygon[i][0];
-      final y1 = polygon[i][1];
-      final x2 = polygon[i + 1][0];
-      final y2 = polygon[i + 1][1];
-
-      if (y1 <= y) {
-        if (y2 > y) {
-          final cross = (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
-          if (cross > 0) {
-            windingNumber++;
-          }
-        }
-      } else {
-        if (y2 <= y) {
-          final cross = (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
-          if (cross < 0) {
-            windingNumber--;
-          }
-        }
-      }
-    }
-
-    return windingNumber != 0;
   }
 
   static Future<List<Map<String, dynamic>>> _loadCrashDataFromAsset() async {
@@ -1264,8 +845,4 @@ class PedestrianCrashDrawingService {
   static void clearCache() {
     _cachedCrashFeatures = null;
   }
-}
-
-extension on double {
-  String toFixed(int decimals) => toStringAsFixed(decimals);
 }
